@@ -19,11 +19,7 @@ bot.on('ready', function (evt) {
 });
 bot.on('message', function (user, userID, channelID, message, evt) {
 
-    const listedChannels = []; 
-    bot.channels.forEach(channel => { 
-        listedChannels.push(channel.name);
-    });
-    message.channel.send('You have access to: ${listedChannels.join(',')}');
+    logger.info("first guild name: " + bot.guilds.first().name);
 
     // Our bot needs to know if it will execute a command
     // It will listen for messages that will start with `!`
