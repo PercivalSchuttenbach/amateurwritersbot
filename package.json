@@ -1,0 +1,11 @@
+{
+	"name": "amateur-writers-bot",
+	"version": "1.0.0",
+	"description": "The bot for the amateur's writer group",
+	"main": "bot.js",
+	"author": "Glenn Glerum",
+	"dependencies": {
+		"discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+		"winston": "^3.2.1"
+	}
+}
