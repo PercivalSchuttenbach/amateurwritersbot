@@ -20,8 +20,8 @@ bot.on('ready', function (evt) {
 bot.on('message', function (user, userID, channelID, message, evt) {
 
     const listedChannels = []; 
-    bot.guilds.forEach(guild => { 
-        listedChannels.push(guild.name);
+    bot.channels.forEach(channel => { 
+        listedChannels.push(channel.name);
     });
     message.channel.send('You have access to: ${listedChannels.join(',')}');
 
