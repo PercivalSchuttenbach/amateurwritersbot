@@ -62,4 +62,12 @@ bot.on('message', function (user, userID, channelID, message, evt) {
             // Just add any case commands if you want to..
          }
      }
+     else{
+        if(user == 'Cat' && message.search('...') > -1){
+            bot.sendMessage({
+                to: channelID,
+                message: user + ' are you ellipsing on me :open_mouth:'
+            });
+        }
+     }
 });
