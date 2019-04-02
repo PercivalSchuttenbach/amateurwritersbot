@@ -126,7 +126,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         if(channelID=='522773675263655983' && user != 'AmateurWritersBot'){
             logger.info('In channel. Yep.');
             //@WRITING
-            if(message.toLowerCase().search('writing') > -1 || message.toLowerCase().search('write') > -1){
+            if(message.toLowerCase().indexOf(' writing ') > -1 || message.toLowerCase().indexOf(' write ') > -1){
                 if(!memory[user]){
                     memory[user] = { 'writing': {timestamp: null, count: 0} };
                     logger.info('Creating user: ' + user);
@@ -143,7 +143,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                         logger.info('Message writing for user: ' + user);
                         bot.sendMessage({
                             to: channelID,
-                            message: user + ' writing... writing... al you talk about is writing. When are you going to start :thinking: '
+                            message: user + ' writing... writing... all you talk about is writing. When are you going to start :thinking: '
                         });
 
                         // make sure it's not fired again for at least an hour
