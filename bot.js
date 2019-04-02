@@ -56,13 +56,8 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 var userChannel = getRandomCritiqueUser();
                 bot.sendMessage({
                     to: channelID,
-                    message: user + ' your random channel to critique is #' + userChannel
+                    message: user + ' your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
                 });
-                bot.sendMessage({
-                    to: channelID,
-                    message: 'don\'t forget to mention the corresponding user in #feedback'
-                });
-                //FUss
             break;
             // Just add any case commands if you want to..
          }
