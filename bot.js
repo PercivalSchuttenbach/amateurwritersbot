@@ -68,17 +68,22 @@ bot.on('message', function (user, userID, channelID, message, evt) {
      else{
         //522773675263655983
         if(channelID=='529308676884922369' && user != 'AmateurWritersBot'){
+            logger.info('In channel. Yep.');
             if(message.toLowerCase().search('writing') > -1 || message.toLowerCase().search('write') > -1){
                 if(!memory[user]){
                     memory[user] = { 'writing': {timestamp: null, count: 0} };
+                    logger.info('Creating user: ' + user);
                 }
                 if(!memory[user]['writing']){
                     memory[user]['writing'] = {timestamp: null, count: 0};
+                    logger.info('Adding writing to user: ' + user);
                 }
                 if(memory[user]['writing'].timestamp && (currentTime - memory[user]['writing'].timestamp) >= 3600000){
                     if(memory[user].writing.count != 5){
                         memory[user].writing.count++;
+                        logger.info('Incremented writing for user: ' + user);
                     }else{
+                        logger.info('Message writing for user: ' + user);
                         bot.sendMessage({
                             to: channelID,
                             message: user + ' writing writing al you talk about is writing. When are you going to start :thinking: '
