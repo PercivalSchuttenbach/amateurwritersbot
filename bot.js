@@ -78,7 +78,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     memory[user]['writing'] = {timestamp: null, count: 0};
                     logger.info('Adding writing to user: ' + user);
                 }
-                if(memory[user]['writing'].timestamp && (currentTime - memory[user]['writing'].timestamp) >= 3600000){
+                if(!memory[user]['writing'].timestamp || (currentTime - memory[user]['writing'].timestamp) >= 3600000){
                     if(memory[user].writing.count != 5){
                         memory[user].writing.count++;
                         logger.info('Incremented writing for user: ' + user);
