@@ -12,7 +12,7 @@ var memory = {
     }
 };
 
-function krewlGate(user, channelID){
+function krewlGate(user, channelID, currentTime){
     if(!memory['AmateurWritersBot'].krewlgate.timestamp || (currentTime - memory['AmateurWritersBot'].krewlgate.timestamp) >= 3600000){
         bot.sendMessage({
             to: channelID,
@@ -117,7 +117,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 });
             break;
             case 'krewlgate':
-                krewlGate(user, channelID);
+                krewlGate(user, channelID, currentTime);
             break;
          }
      }
