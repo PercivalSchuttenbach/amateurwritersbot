@@ -69,5 +69,11 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 message: user + ' are you ellipsing on me :open_mouth:'
             });
         }
+        if(channelID=='522773675263655983' && message.search('writing') > -1){
+            bot.sendMessage({
+                to: channelID,
+                message: user + ' writing???? Your in #procrastination-station. Writing is strictly prohibited! :scream:'
+            });
+        }
      }
 });
