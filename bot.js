@@ -54,7 +54,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
             break;
             case 'random':
                 var userChannel = getRandomCritiqueUser();
-                var userName = getUserByChannel(userChannel, channelID);
                 bot.sendMessage({
                     to: channelID,
                     message: user + ' your random channel to critique is #' + userChannel
