@@ -12,6 +12,51 @@ var memory = {
     }
 };
 
+function krewlGate(user, channelID){
+    if(!memory['AmateurWritersBot'].krewlgate.timestamp || (currentTime - memory['AmateurWritersBot'].krewlgate.timestamp) >= 3600000){
+        bot.sendMessage({
+            to: channelID,
+            message: 'https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png'
+        });
+        memory['AmateurWritersBot'].krewlgate.timestamp = +new Date();
+        memory['AmateurWritersBot'].krewlgate.users = {};
+    }
+    else
+    {
+        //set user count to 0
+        if(!memory['AmateurWritersBot'].krewlgate.users[user]){
+            memory['AmateurWritersBot'].krewlgate.users[user] = 0;
+        }
+        //if the user used the command 7 times, reset
+        if(memory['AmateurWritersBot'].krewlgate.users[user]==7){
+            memory['AmateurWritersBot'].krewlgate.users[user] = 1;
+        }
+        memory['AmateurWritersBot'].krewlgate.users[user]++;
+        //call the user out for being an ass
+        switch(memory['AmateurWritersBot'].krewlgate.users[user]){
+            case 1:
+                bot.sendMessage({
+                    to: channelID,
+                    message: user + ' stop harrasing the poor boy.'
+                });
+            break;
+            case 3:
+                bot.sendMessage({
+                    to: channelID,
+                    message: user + ' you deaf?'
+                });
+            break;
+            case 5:
+                bot.sendMessage({
+                    to: channelID,
+                    message: user + ' is an asshat!'
+                });
+            break;
+        }
+    }
+
+}
+
 function getRandomCritiqueUser(){
     var userChannels = [];
     for(var c in bot.channels){
@@ -72,52 +117,15 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 });
             break;
             case 'krewlgate':
-                if(!memory['AmateurWritersBot'].krewlgate.timestamp || (currentTime - memory['AmateurWritersBot'].krewlgate.timestamp) >= 3600000){
-                    bot.sendMessage({
-                        to: channelID,
-                        message: 'https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png'
-                    });
-                    memory['AmateurWritersBot'].krewlgate.timestamp = +new Date();
-                    memory['AmateurWritersBot'].krewlgate.users = {};
-                }
-                else
-                {
-                    if(!memory['AmateurWritersBot'].krewlgate.users[user]){
-                        memory['AmateurWritersBot'].krewlgate.users[user] = 0;
-                    }
-                    if(memory['AmateurWritersBot'].krewlgate.users[user]==7){
-                        memory['AmateurWritersBot'].krewlgate.users[user] = 1;
-                    }
-                    memory['AmateurWritersBot'].krewlgate.users[user]++;
-                    switch(memory['AmateurWritersBot'].krewlgate.users[user]){
-                        case 1:
-                            bot.sendMessage({
-                                to: channelID,
-                                message: user + ' stop harrasing the poor boy.'
-                            });
-                        break;
-                        case 3:
-                            bot.sendMessage({
-                                to: channelID,
-                                message: user + ' you deaf?'
-                            });
-                        break;
-                        case 5:
-                            bot.sendMessage({
-                                to: channelID,
-                                message: user + ' is an asshat!'
-                            });
-                        break;
-                    }
-                }
+                krewlGate(user, channelID);
             break;
-            // Just add any case commands if you want to..
          }
      }
      else{
         //522773675263655983
         if(channelID=='522773675263655983' && user != 'AmateurWritersBot'){
             logger.info('In channel. Yep.');
+            //@WRITING
             if(message.toLowerCase().search('writing') > -1 || message.toLowerCase().search('write') > -1){
                 if(!memory[user]){
                     memory[user] = { 'writing': {timestamp: null, count: 0} };
