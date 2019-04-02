@@ -78,6 +78,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                         message: 'https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png'
                     });
                     memory['AmateurWritersBot'].krewlgate.timestamp = +new Date();
+                    memory['AmateurWritersBot'].krewlgate.users = {};
                 }
                 else
                 {
