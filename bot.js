@@ -1,6 +1,7 @@
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('./auth.json');
+var memory = {};
 
 function getRandomCritiqueUser(){
     var userChannels = [];
@@ -37,6 +38,8 @@ bot.on('ready', function (evt) {
     logger.info(bot.username + ' - (' + bot.id + ')');
 });
 bot.on('message', function (user, userID, channelID, message, evt) {
+    var currentTime = +new Date();
+
     // Our bot needs to know if it will execute a command
     // It will listen for messages that will start with `!`
     if (message.substring(0, 1) == '~') {
@@ -63,17 +66,29 @@ bot.on('message', function (user, userID, channelID, message, evt) {
          }
      }
      else{
-        if(user == 'PercivalSchuttenbach' && message.indexOf('...') > -1){
-            bot.sendMessage({
-                to: channelID,
-                message: user + ' are you ellipsing on me :open_mouth:'
-            });
-        }
-        if(channelID=='522773675263655983' && user != 'AmateurWritersBot' && message.search('writing') > -1){
-            bot.sendMessage({
-                to: channelID,
-                message: user + ' writing???? You\'re in #procrastination-station. Writing is strictly prohibited! :scream:'
-            });
+        if(channelID=='522773675263655983' && user != 'AmateurWritersBot'){
+            if(message.toLowerCase().search('writing') > -1 || message.toLowerCase().search('write') > -1){
+                if(!memory[user]){
+                    memory[user] = { 'writing': {timestamp: null, count: 0} };
+                }
+                if(!memory[user]['writing']){
+                    memory[user]['writing'] = {timestamp: null, count: 0};
+                }
+                if(memory[user]['writing'].timestamp && (currentTime - memory[user]['writing'].timestamp) >= 3600000){
+                    if(memory[user].writing.count != 5){
+                        memory[user].writing.count++;
+                    }else{
+                        bot.sendMessage({
+                            to: channelID,
+                            message: user + ' writing writing al you talk about is writing. When are you going to start :thinking: '
+                        });
+
+                        memory[user].writing.timestamp = +new Date();
+                        
+                        // make sure it's not fired again for at least an hour
+                    }
+                }
+            }
         }
      }
 });
