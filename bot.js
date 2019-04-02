@@ -66,7 +66,8 @@ bot.on('message', function (user, userID, channelID, message, evt) {
          }
      }
      else{
-        if(channelID=='522773675263655983' && user != 'AmateurWritersBot'){
+        //522773675263655983
+        if(channelID=='529308676884922369' && user != 'AmateurWritersBot'){
             if(message.toLowerCase().search('writing') > -1 || message.toLowerCase().search('write') > -1){
                 if(!memory[user]){
                     memory[user] = { 'writing': {timestamp: null, count: 0} };
