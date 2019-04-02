@@ -94,11 +94,13 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                                 to: channelID,
                                 message: user + ' stop harrasing the poor boy.'
                             });
+                        break;
                         case 3:
                             bot.sendMessage({
                                 to: channelID,
                                 message: user + ' you deaf?'
                             });
+                        break;
                         case 5:
                             bot.sendMessage({
                                 to: channelID,
