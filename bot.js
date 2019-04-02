@@ -1,7 +1,16 @@
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('./auth.json');
-var memory = {};
+var memory = {
+    'AmateurWritersBot':
+    {
+        'krewlgate':
+        {
+            'timestamp': null,
+            'users': {}
+        }
+    }
+};
 
 function getRandomCritiqueUser(){
     var userChannels = [];
@@ -62,6 +71,43 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     message: user + ' your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
                 });
             break;
+            case 'krewlgate':
+                if(!memory['AmateurWritersBot'].krewlgate.timestamp || (currentTime - memory['AmateurWritersBot'].krewlgate.timestamp) >= 3600000){
+                    bot.sendMessage({
+                        to: channelID,
+                        message: 'https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png'
+                    });
+                    memory['AmateurWritersBot'].krewlgate.timestamp = +new Date();
+                }
+                else
+                {
+                    if(!memory['AmateurWritersBot'].krewlgate.users[user]){
+                        memory['AmateurWritersBot'].krewlgate.users[user] = 0;
+                    }
+                    if(memory['AmateurWritersBot'].krewlgate.users[user]==7){
+                        memory['AmateurWritersBot'].krewlgate.users[user] = 1;
+                    }
+                    memory['AmateurWritersBot'].krewlgate.users[user]++;
+                    switch(memory['AmateurWritersBot'].krewlgate.users[user]){
+                        case 1:
+                            bot.sendMessage({
+                                to: channelID,
+                                message: user + ' stop harrasing the poor boy.'
+                            });
+                        case 3:
+                            bot.sendMessage({
+                                to: channelID,
+                                message: user + ' you deaf?'
+                            });
+                        case 5:
+                            bot.sendMessage({
+                                to: channelID,
+                                message: user + ' is an asshat!'
+                            });
+                        break;
+                    }
+                }
+            break;
             // Just add any case commands if you want to..
          }
      }
@@ -89,10 +135,9 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                             message: user + ' writing... writing... al you talk about is writing. When are you going to start :thinking: '
                         });
 
+                        // make sure it's not fired again for at least an hour
                         memory[user].writing.timestamp = +new Date();
                         memory[user].writing.count = 0;
-                        
-                        // make sure it's not fired again for at least an hour
                     }
                 }
             }
