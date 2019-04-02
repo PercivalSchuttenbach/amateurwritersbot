@@ -63,7 +63,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
          }
      }
      else{
-        if(user == 'Cat' && message.search('...') > -1){
+        if(user == 'PercivalSchuttenbach' && message.indexOf('...') > -1){
             bot.sendMessage({
                 to: channelID,
                 message: user + ' are you ellipsing on me :open_mouth:'
