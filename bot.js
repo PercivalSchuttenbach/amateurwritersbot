@@ -5,7 +5,7 @@ var auth = require('./auth.json');
 function getRandomCritiqueUser(){
     var userChannels = [];
     for(var c in bot.channels){
-        if(bot.channels[c].parent_id == '562335711064489994'){
+        if(bot.channels[c].parent_id == '562283512904941614'){
             userChannels.push(bot.channels[c].name);
         }
     }
