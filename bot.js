@@ -90,6 +90,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                         });
 
                         memory[user].writing.timestamp = +new Date();
+                        memory[user].writing.count = 0;
                         
                         // make sure it's not fired again for at least an hour
                     }
