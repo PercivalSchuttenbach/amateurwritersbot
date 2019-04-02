@@ -86,7 +86,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                         logger.info('Message writing for user: ' + user);
                         bot.sendMessage({
                             to: channelID,
-                            message: user + ' writing writing al you talk about is writing. When are you going to start :thinking: '
+                            message: user + ' writing... writing... al you talk about is writing. When are you going to start :thinking: '
                         });
 
                         memory[user].writing.timestamp = +new Date();
