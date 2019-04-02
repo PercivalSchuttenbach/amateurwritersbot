@@ -63,6 +63,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     to: channelID,
                     message: 'don\'t forget to mention the corresponding user in #feedback'
                 });
+                //FUs
             break;
             // Just add any case commands if you want to..
          }
