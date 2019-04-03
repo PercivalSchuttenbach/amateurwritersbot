@@ -31,7 +31,7 @@ function krewlGateHasBeencalled(user, currentTime, channelID){
             krewlgateMemory.users[user] = 0;
         }
         //if the user used the command 7 times, reset
-        if(krewlgateMemory.users[user]==7){
+        if(krewlgateMemory.users[user]==3){
             krewlgateMemory.users[user] = 0;
         }
         krewlgateMemory.users[user]++;
@@ -127,7 +127,7 @@ function writingCallOut(user, message, currentTime, channelID){
                 logger.info('All talk');
                 bot.sendMessage({
                     to: channelID,
-                    message: 'All you guys talk about is writing. When are you going to start? :thinking: '
+                    message: 'All you guys talk about is writing. When are you going to start? :thinking:'
                 });
 
                 // make sure it's not fired again for at least an hour
@@ -184,6 +184,12 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 case 'krewlgate':
                     krewlGate(user, channelID, currentTime);
                 break;
+                case 'ouulthululu':
+                 bot.sendMessage({
+                    to: channelID,
+                    message: 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif'
+                });
+                break;
              }
         }
         else {
@@ -217,6 +223,12 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 break;
                 case 'krewlgate':
                     krewlGate(user, channelID, currentTime);
+                break;
+                case 'ouulthululu':
+                 bot.sendMessage({
+                    to: channelID,
+                    message: 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif'
+                });
                 break;
              }
          }
