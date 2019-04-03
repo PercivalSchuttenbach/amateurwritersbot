@@ -18,18 +18,14 @@ var memory = {
     }
 };
 
-function krewlGate(user, channelID, currentTime){
+function krewlGateHasBeencalled(user, currentTime, channelID){
     var krewlgateMemory = memory['AmateurWritersBot'].krewlgate;
+
     if(!krewlgateMemory.timestamp || (currentTime - krewlgateMemory.timestamp) >= 3600000){
-        bot.sendMessage({
-            to: channelID,
-            message: 'https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png'
-        });
-        krewlgateMemory.timestamp = +new Date();
+        krewlgateMemory.timestamp = currentTime;
         krewlgateMemory.users = {};
     }
-    else
-    {
+    else {
         //set user count to 0
         if(!krewlgateMemory.users[user]){
             krewlgateMemory.users[user] = 0;
@@ -56,12 +52,34 @@ function krewlGate(user, channelID, currentTime){
             case 3:
                 bot.sendMessage({
                     to: channelID,
-                    message: 'Mom ' + user + ' is picking on Krewl again!'
+                    message: 'Mom! ' + user + ' is picking on Krewl again!'
                 });
             break;
         }
     }
+}
 
+function krewlGate(user, channelID, currentTime){
+    var krewlgateMemory = memory['AmateurWritersBot'].krewlgate;
+    if(!krewlgateMemory.timestamp || (currentTime - krewlgateMemory.timestamp) >= 3600000){
+        bot.sendMessage({
+            to: channelID,
+            message: 'https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png'
+        });
+        krewlGateHasBeencalled(user, currentTime, channelID);
+    }
+    else
+    {
+        krewlGateHasBeencalled(user, currentTime, channelID);
+    }
+
+}
+
+function checkForKrewlGate(user, message, currentTime, channelID){
+    if(message.toLowerCase().indexOf('https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png') > -1){
+        logger.info('Krewlgate image detected');
+        krewlGateHasBeencalled(user, currentTime, channelID);
+    }
 }
 
 function getRandomCritiqueUser(){
@@ -170,6 +188,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         }
         else {
             writingCallOut(user, message, currentTime, channelID);
+            checkForKrewlGate(user, message, currentTime, channelID);
         }
     }
 
@@ -197,13 +216,14 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     });
                 break;
                 case 'krewlgate':
-                    //krewlGate(user, channelID, currentTime);
+                    krewlGate(user, channelID, currentTime);
                 break;
              }
          }
          else{
             //522773675263655983
             writingCallOut(user, message, currentTime, channelID);
+            checkForKrewlGate(user, message, currentTime, channelID);
          }
      }
 });
