@@ -262,7 +262,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
             if(d.getMonth()==4 && d.getDay()==10 && user == 'PercivalSchuttenbach'){
                 bot.sendMessage({
                     to: channelID,
-                    message: "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif";
+                    message: "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif"
                 });
             }
          }
