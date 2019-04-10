@@ -1,6 +1,20 @@
+var fs = require('fs');
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('./auth.json');
+
+// Configure logger settings
+logger.remove(logger.transports.Console);
+logger.add(new logger.transports.Console, {
+    colorize: true
+});
+logger.level = 'debug';
+// Initialize Discord Bot
+var bot = new Discord.Client({
+   token: auth.token,
+   autorun: true
+});
+
 var memory = {
     'AmateurWritersBot':
     {
@@ -102,9 +116,9 @@ function getRandomCritiqueUser(){
 
 //have it check witihin the scope of 15 minutes for to much talk about writing
 function writingCallOut(user, message, currentTime, channelID){
-    logger.info('Writing callout check');
     //when writing or write is detected run. Writing or Write should be at the start of the word
     if(message.toLowerCase().search('\\bwriting') > -1 || message.toLowerCase().search('\\bwrite') > -1){
+        logger.info('Writing callout check');
         //check if memory storage is available
         if(!memory['AmateurWritersBot']['writing']){
             memory['AmateurWritersBot']['writing'] = { start: null, count: 0, cooldown: null };
@@ -138,17 +152,7 @@ function writingCallOut(user, message, currentTime, channelID){
     }
 }
 
-// Configure logger settings
-logger.remove(logger.transports.Console);
-logger.add(new logger.transports.Console, {
-    colorize: true
-});
-logger.level = 'debug';
-// Initialize Discord Bot
-var bot = new Discord.Client({
-   token: auth.token,
-   autorun: true
-});
+
 bot.on('ready', function (evt) {
     logger.info('Connected');
     logger.info('Logged in as: ');
@@ -157,7 +161,7 @@ bot.on('ready', function (evt) {
 bot.on('message', function (user, userID, channelID, message, evt) {
     var currentTime = +new Date();
 
-    //testing
+    //testing server
     if(channelID=='562335386970357779' && user != 'AmateurWritersBot'){
          // Our bot needs to know if it will execute a command
         // It will listen for messages that will start with `!`
@@ -190,6 +194,9 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     message: 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif'
                 });
                 break;
+                case 'blackjack':
+                 bot.commands['blackjack'].execute(message, args, user, channelID, bot);
+                break;
              }
         }
         else {
@@ -221,21 +228,43 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                         message: user + ' your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
                     });
                 break;
+                case 'choose':
+                    var intRandom = Math.floor(Math.random() * args.length);
+                    var choice = args[intRandom];
+                    bot.sendMessage({
+                        to: channelID,
+                        message: user + ' I chose ' + choice + ' for you'
+                    });
+                break;
                 case 'krewlgate':
                     krewlGate(user, channelID, currentTime);
                 break;
                 case 'ouulthululu':
+                 var d = new Date();
+                 var gif = 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif';
+                 if(d.getMonth()==4 && d.getDay()==10){
+                    gif = "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif";
+                 }
+
                  bot.sendMessage({
                     to: channelID,
-                    message: 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif'
+                    message: gif
                 });
                 break;
              }
          }
          else{
+             var d = new Date();
             //522773675263655983
             writingCallOut(user, message, currentTime, channelID);
             checkForKrewlGate(user, message, currentTime, channelID);
+
+            if(d.getMonth()==4 && d.getDay()==10 && user == 'PercivalSchuttenbach'){
+                bot.sendMessage({
+                    to: channelID,
+                    message: "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif";
+                });
+            }
          }
      }
 });
