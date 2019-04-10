@@ -55,19 +55,19 @@ function krewlGateHasBeencalled(user, currentTime, channelID){
             case 1:
                 bot.sendMessage({
                     to: channelID,
-                    message: user + ' stop harrasing the poor boy.'
+                    message: '<@' + userID +'> stop harrasing the poor boy.'
                 });
             break;
             case 2:
                 bot.sendMessage({
                     to: channelID,
-                    message: user + ' you deaf?'
+                    message: '<@' + userID +'> you deaf?'
                 });
             break;
             case 3:
                 bot.sendMessage({
                     to: channelID,
-                    message: 'Mom! ' + user + ' is picking on Krewl again!'
+                    message: 'Mom! <@' + userID +'> is picking on Krewl again!'
                 });
             break;
         }
@@ -183,7 +183,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     var userChannel = getRandomCritiqueUser();
                     bot.sendMessage({
                         to: channelID,
-                        message: user + ' your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
+                        message: '<@' + userID +'> your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
                     });
                 break;
                 case 'krewlgate':
@@ -200,7 +200,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     var choice = args[intRandom];
                     bot.sendMessage({
                         to: channelID,
-                        message: user + ' I chose ' + choice + ' for you'
+                        message: '<@' + userID +'> I chose ' + choice + ' for you'
                     });
                 break;
              }
@@ -231,7 +231,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     var userChannel = getRandomCritiqueUser();
                     bot.sendMessage({
                         to: channelID,
-                        message: user + ' your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
+                        message: '<@' + userID +'> your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
                     });
                 break;
                 case 'choose':
@@ -239,7 +239,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     var choice = args[intRandom];
                     bot.sendMessage({
                         to: channelID,
-                        message: user + ' I chose ' + choice + ' for you'
+                        message: '<@' + userID +'> I chose ' + choice + ' for you'
                     });
                 break;
                 case 'krewlgate':
