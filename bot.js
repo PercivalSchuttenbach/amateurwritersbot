@@ -28,7 +28,8 @@ var memory = {
             'start': null,
             'cooldown': null,
             'count': 0
-        }
+        },
+        'ouulbd': false
     }
 };
 
@@ -194,8 +195,13 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     message: 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif'
                 });
                 break;
-                case 'blackjack':
-                 bot.commands['blackjack'].execute(message, args, user, channelID, bot);
+                 case 'choose':
+                    var intRandom = Math.floor(Math.random() * args.length);
+                    var choice = args[intRandom];
+                    bot.sendMessage({
+                        to: channelID,
+                        message: user + ' I chose ' + choice + ' for you'
+                    });
                 break;
              }
         }
@@ -242,7 +248,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 case 'ouulthululu':
                  var d = new Date();
                  var gif = 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif';
-                 if(d.getMonth()==4 && d.getDay()==10){
+                 if(d.getMonth()==3 && d.getDate()==12){
                     gif = "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif";
                  }
 
@@ -254,17 +260,18 @@ bot.on('message', function (user, userID, channelID, message, evt) {
              }
          }
          else{
-             var d = new Date();
             //522773675263655983
             writingCallOut(user, message, currentTime, channelID);
             checkForKrewlGate(user, message, currentTime, channelID);
 
-            if(d.getMonth()==4 && d.getDay()==10 && user == 'PercivalSchuttenbach'){
-                bot.sendMessage({
-                    to: channelID,
-                    message: "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif"
-                });
-            }
+             var d = new Date();
+              if(!memory['AmateurWritersBot']['ouulbd'] && d.getMonth()==3 && d.getDate()==12 && (user == 'Ouulette' || user== 'Ouul' )){
+                    bot.sendMessage({
+                        to: channelID,
+                        message: "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif"
+                    });
+                    memory['AmateurWritersBot']['ouulbd'] = true;
+                }
          }
      }
 });
