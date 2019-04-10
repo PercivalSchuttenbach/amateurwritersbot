@@ -203,6 +203,16 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                         message: '<@' + userID +'> I chose ' + choice + ' for you'
                     });
                 break;
+                case 'help':
+                bot.sendMessage({
+                    to: channelID,
+                    message: '<@'+ userID +'> I agree. But I doubt if I am the right person? :thinking:'
+                });
+                bot.sendMessage({
+                    to: userID,
+                    message: 'command list is being worked on'
+                });
+                break;
              }
         }
         else {
@@ -255,6 +265,16 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                  bot.sendMessage({
                     to: channelID,
                     message: gif
+                });
+                break;
+                case 'help':
+                bot.sendMessage({
+                    to: channelID,
+                    message: '<@'+ userID +'> I agree. But I doubt if I am the right person? :thinking:'
+                });
+                bot.sendMessage({
+                    to: userID,
+                    message: 'command list is being worked on'
                 });
                 break;
              }
