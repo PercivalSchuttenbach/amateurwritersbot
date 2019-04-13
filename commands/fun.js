@@ -1,4 +1,4 @@
-function Fun(client, logger, memory){
+function Fun(Discord, client, logger, memory){
 
 	client.on("message", message => {
 		if(message.author.bot){
@@ -10,7 +10,9 @@ function Fun(client, logger, memory){
 
 		switch(command){
 			case 'ouulthululu':
-            	message.channel.send('https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif');
+				const embed = new Discord.RichEmbed();
+				embed.setImage('https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif');
+            	message.channel.send(embed);
             break;
 		}
 	});
@@ -19,7 +21,7 @@ function Fun(client, logger, memory){
 module.exports = {
   name: 'fun',
   description: 'fun',
-  init(client, logger, memory){
-    fun = new Fun(client, logger, memory);
+  init(Discord, client, logger, memory){
+    fun = new Fun(Discord, client, logger, memory);
   }
 };

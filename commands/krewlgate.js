@@ -1,4 +1,4 @@
-function Krewlgate(client, logger, memory){
+function Krewlgate(Discord, client, logger, memory){
   var krewlimage = 'https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png';
 
   function krewlGateHasBeencalled(userId, currentTime, channel){
@@ -44,7 +44,9 @@ function Krewlgate(client, logger, memory){
 
       var krewlgateMemory = memory['AmateurWritersBot'].krewlgate;
       if(!krewlgateMemory.timestamp || (currentTime - krewlgateMemory.timestamp) >= 3600000){
-          channel.send(krewlimage)
+          const embed = new Discord.RichEmbed();
+          embed.setImage(krewlimage);
+          channel.send(embed);
       }
 
       krewlGateHasBeencalled(userId, currentTime, channel);
@@ -83,7 +85,7 @@ var krewl;
 module.exports = {
   name: 'krewlgate',
   description: 'krewlgate',
-  init(client, logger, memory){
-    krewl = new Krewlgate(client, logger, memory);
+  init(Discord, client, logger, memory){
+    krewl = new Krewlgate(Discord, client, logger, memory);
   }
 };

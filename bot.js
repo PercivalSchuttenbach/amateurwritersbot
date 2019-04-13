@@ -42,17 +42,20 @@ for (var file in commandFiles) {
 }
 
 if(client.commands.krewlgate){
-    client.commands.krewlgate.init(client, logger, memory);
+    client.commands.krewlgate.init(Discord, client, logger, memory);
 }
 if(client.commands.callout){
      client.commands.callout.init(client, logger, memory);
 }
 if(client.commands.fun){
-    client.commands.fun.init(client, logger, memory);
+     client.commands.fun.init(Discord, client, logger, memory);
 }
 if(client.commands.tools){
     client.commands.tools.init(client, logger, memory);
 }
+// if(client.commands.critique){
+//     client.commands.critique.init(Discord, client, logger, memory);
+// }
 
 client.on("message", message => {
     
