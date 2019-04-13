@@ -35,11 +35,13 @@ function Callout(client, logger, memory){
 
 	//listeners
 	client.on("message", message => {
-	  if(message.author.bot){
-	    return;
-	  }
-	  var currentTime = +new Date();
-	  writingCallOut(message.author.id, message.content, currentTime, message.channel);
+	  	if(message.author.bot){
+	    	return;
+	  	}
+	  	if(message.channel.id=="522773675263655983"){
+		  var currentTime = +new Date();
+		  writingCallOut(message.author.id, message.content, currentTime, message.channel);
+		}
 	});
 }
 
