@@ -1,7 +1,7 @@
+require('dotenv').config(); 
 var fs = require('fs');
-var Discord = require('discord.io');
+var Discord = require('discord.js');
 var logger = require('winston');
-var auth = require('./auth.json');
 
 // Configure logger settings
 logger.remove(logger.transports.Console);
@@ -10,10 +10,9 @@ logger.add(new logger.transports.Console, {
 });
 logger.level = 'debug';
 // Initialize Discord Bot
-var bot = new Discord.Client({
-   token: auth.token,
-   autorun: true
-});
+var client = new Discord.Client();
+
+var debug = true;
 
 var memory = {
     'AmateurWritersBot':
@@ -33,265 +32,49 @@ var memory = {
     }
 };
 
-function krewlGateHasBeencalled(user, currentTime, channelID){
-    var krewlgateMemory = memory['AmateurWritersBot'].krewlgate;
+client.commands = {};
 
-    if(!krewlgateMemory.timestamp || (currentTime - krewlgateMemory.timestamp) >= 3600000){
-        krewlgateMemory.timestamp = currentTime;
-        krewlgateMemory.users = {};
-    }
-    else {
-        //set user count to 0
-        if(!krewlgateMemory.users[user]){
-            krewlgateMemory.users[user] = 0;
-        }
-        //if the user used the command 7 times, reset
-        if(krewlgateMemory.users[user]==3){
-            krewlgateMemory.users[user] = 0;
-        }
-        krewlgateMemory.users[user]++;
-        //call the user out for being an ass
-        switch(krewlgateMemory.users[user]){
-            case 1:
-                bot.sendMessage({
-                    to: channelID,
-                    message: '<@' + userID +'> stop harrasing the poor boy.'
-                });
-            break;
-            case 2:
-                bot.sendMessage({
-                    to: channelID,
-                    message: '<@' + userID +'> you deaf?'
-                });
-            break;
-            case 3:
-                bot.sendMessage({
-                    to: channelID,
-                    message: 'Mom! <@' + userID +'> is picking on Krewl again!'
-                });
-            break;
-        }
-    }
+var commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+
+for (var file in commandFiles) {
+    const command = require('./commands/' + commandFiles[file]);
+    client.commands[command.name] = command;
 }
 
-function krewlGate(user, channelID, currentTime){
-    var krewlgateMemory = memory['AmateurWritersBot'].krewlgate;
-    if(!krewlgateMemory.timestamp || (currentTime - krewlgateMemory.timestamp) >= 3600000){
-        bot.sendMessage({
-            to: channelID,
-            message: 'https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png'
-        });
-        krewlGateHasBeencalled(user, currentTime, channelID);
-    }
-    else
-    {
-        krewlGateHasBeencalled(user, currentTime, channelID);
-    }
-
+if(client.commands.krewlgate){
+    client.commands.krewlgate.init(client, logger, memory);
+}
+if(client.commands.callout){
+     client.commands.callout.init(client, logger, memory);
+}
+if(client.commands.fun){
+    client.commands.fun.init(client, logger, memory);
+}
+if(client.commands.tools){
+    client.commands.tools.init(client, logger, memory);
 }
 
-function checkForKrewlGate(user, message, currentTime, channelID){
-    if(message.toLowerCase().indexOf('https://cdn.discordapp.com/attachments/522773675263655983/561929502087970818/unknown.png') > -1){
-        logger.info('Krewlgate image detected');
-        krewlGateHasBeencalled(user, currentTime, channelID);
-    }
-}
-
-function getRandomCritiqueUser(){
-    var userChannels = [];
-    for(var c in bot.channels){
-        if(bot.channels[c].parent_id == '562283512904941614'){
-            userChannels.push(bot.channels[c].name);
-        }
+client.on("message", message => {
+    
+    if(message.author.bot){
+        return;
     }
 
-    logger.info('Channels:' + userChannels.length);
+    if (message.content.indexOf(process.env.PREFIX) !== 0) return;
 
-    var intRandom = Math.floor(Math.random() * userChannels.length);
-    var user = userChannels[intRandom];
+    const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
+    const command = args.shift().toLowerCase();
 
-    logger.info('The winner is:' + user);
-
-    return user;
-}
-
-//have it check witihin the scope of 15 minutes for to much talk about writing
-function writingCallOut(user, message, currentTime, channelID){
-    //when writing or write is detected run. Writing or Write should be at the start of the word
-    if(message.toLowerCase().search('\\bwriting') > -1 || message.toLowerCase().search('\\bwrite') > -1){
-        logger.info('Writing callout check');
-        //check if memory storage is available
-        if(!memory['AmateurWritersBot']['writing']){
-            memory['AmateurWritersBot']['writing'] = { start: null, count: 0, cooldown: null };
-            logger.info('Created memory store');
-        }
-        var writingMemory = memory['AmateurWritersBot']['writing'];
-        //make sure it's non-obtrusive, run once every hour
-        if( !writingMemory.cooldown || (currentTime >= writingMemory.cooldown) ){
-            //reset start and counter when banter is not resumed within 15 minutes
-            if( !writingMemory.start || (currentTime - writingMemory.start) > (60 * 15 * 1000) ){
-                writingMemory.count = 0;
-                writingMemory.start = currentTime;
-            }
-
-            //keep incrementing if not yet counted banter 4 times
-            if(writingMemory.count != 4){
-                writingMemory.count++;
-                logger.info('Incremented writing for user: ' + user);
-            }else{
-                logger.info('All talk');
-                bot.sendMessage({
-                    to: channelID,
-                    message: 'All you guys talk about is writing. When are you going to start? :thinking:'
-                });
-
-                // make sure it's not fired again for at least an hour
-                writingMemory.cooldown = currentTime + (60 * 60 * 1000);
-                writingMemory.count = 0;
-            }
-        }
+    switch(command){
+        case 'ping':
+            message.channel.send('pong!');
+        break;
+        case 'help':
+            message.channel.send(message.author.toString() + ' I agree. But I doubt if I am the right person? :thinking:');
+            message.author.send('**~random**: will choose one of the masterdoc channels for you to pick a story from and critique.\n**~choose** *option-1 option-2 option-3*: will choose one of the listed options for you.\n**~ouulthululu**: summons the Ouul\n**~krewlgate**: that which we do not speak of.');
+        break;
     }
-}
 
-
-bot.on('ready', function (evt) {
-    logger.info('Connected');
-    logger.info('Logged in as: ');
-    logger.info(bot.username + ' - (' + bot.id + ')');
 });
-bot.on('message', function (user, userID, channelID, message, evt) {
-    var currentTime = +new Date();
 
-    //testing server
-    if(channelID=='562335386970357779' && user != 'AmateurWritersBot'){
-         // Our bot needs to know if it will execute a command
-        // It will listen for messages that will start with `!`
-        if (message.substring(0, 1) == '~') {
-            var args = message.substring(1).split(' ');
-            var cmd = args[0];
-           
-            args = args.splice(1);
-            switch(cmd) {
-                // !ping
-                case 'ping':
-                    bot.sendMessage({
-                        to: channelID,
-                        message: 'Pong!'
-                    });
-                break;
-                case 'random':
-                    var userChannel = getRandomCritiqueUser();
-                    bot.sendMessage({
-                        to: channelID,
-                        message: '<@' + userID +'> your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
-                    });
-                break;
-                case 'krewlgate':
-                    krewlGate(user, channelID, currentTime);
-                break;
-                case 'ouulthululu':
-                 bot.sendMessage({
-                    to: channelID,
-                    message: 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif'
-                });
-                break;
-                 case 'choose':
-                    var intRandom = Math.floor(Math.random() * args.length);
-                    var choice = args[intRandom];
-                    bot.sendMessage({
-                        to: channelID,
-                        message: '<@' + userID +'> I chose ' + choice + ' for you'
-                    });
-                break;
-                case 'help':
-                bot.sendMessage({
-                    to: channelID,
-                    message: '<@'+ userID +'> I agree. But I doubt if I am the right person? :thinking:'
-                });
-                bot.sendMessage({
-                    to: userID,
-                    message: 'command list is being worked on'
-                });
-                break;
-             }
-        }
-        else {
-            writingCallOut(user, message, currentTime, channelID);
-            checkForKrewlGate(user, message, currentTime, channelID);
-        }
-    }
-
-    if(channelID=='522773675263655983' && user != 'AmateurWritersBot'){
-        // Our bot needs to know if it will execute a command
-        // It will listen for messages that will start with `!`
-        if (message.substring(0, 1) == '~') {
-            var args = message.substring(1).split(' ');
-            var cmd = args[0];
-           
-            args = args.splice(1);
-            switch(cmd) {
-                // !ping
-                case 'ping':
-                    bot.sendMessage({
-                        to: channelID,
-                        message: 'Pong!'
-                    });
-                break;
-                case 'random':
-                    var userChannel = getRandomCritiqueUser();
-                    bot.sendMessage({
-                        to: channelID,
-                        message: '<@' + userID +'> your random channel to critique is #' + userChannel + '\ndon\'t forget to mention the corresponding user in #feedback'
-                    });
-                break;
-                case 'choose':
-                    var intRandom = Math.floor(Math.random() * args.length);
-                    var choice = args[intRandom];
-                    bot.sendMessage({
-                        to: channelID,
-                        message: '<@' + userID +'> I chose ' + choice + ' for you'
-                    });
-                break;
-                case 'krewlgate':
-                    krewlGate(user, channelID, currentTime);
-                break;
-                case 'ouulthululu':
-                 var d = new Date();
-                 var gif = 'https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif';
-                 if(d.getMonth()==3 && d.getDate()==12){
-                    gif = "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif";
-                 }
-
-                 bot.sendMessage({
-                    to: channelID,
-                    message: gif
-                });
-                break;
-                case 'help':
-                bot.sendMessage({
-                    to: channelID,
-                    message: '<@'+ userID +'> I agree. But I doubt if I am the right person? :thinking:'
-                });
-                bot.sendMessage({
-                    to: userID,
-                    message: 'command list is being worked on'
-                });
-                break;
-             }
-         }
-         else{
-            //522773675263655983
-            writingCallOut(user, message, currentTime, channelID);
-            checkForKrewlGate(user, message, currentTime, channelID);
-
-             var d = new Date();
-              if(!memory['AmateurWritersBot']['ouulbd'] && d.getMonth()==3 && d.getDate()==12 && (user == 'Ouulette' || user== 'Ouul' )){
-                    bot.sendMessage({
-                        to: channelID,
-                        message: "https://cdn.discordapp.com/attachments/565409364458995712/565410751825575946/oothulubd.gif"
-                    });
-                    memory['AmateurWritersBot']['ouulbd'] = true;
-                }
-         }
-     }
-});
+client.login();
