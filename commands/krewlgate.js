@@ -65,6 +65,17 @@ function Krewlgate(client, logger, memory){
       checkForKrewlGate(message.author.id, message.content, currentTime, message.channel);
   });
 
+  //krewl retalliaton
+  client.on("messageReactionAdd", function(messageReaction, user){
+    if(!user.bot && messageReaction.message.author.id == "562331981007028237"){
+        if(user.id=="180006018837774336" && messageReaction.emoji.identifier == "%E2%9D%A4"){
+          if(messageReaction.message.content.indexOf(krewlimage) > -1){
+            messageReaction.message.edit("I :heart: my boy " + user.toString() + " We bots stand united.");
+          }
+        }
+    }
+  });
+
 }
 
 var krewl;
