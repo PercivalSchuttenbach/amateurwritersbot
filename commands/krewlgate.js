@@ -58,7 +58,7 @@ function Krewlgate(client, logger, memory){
       const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
       const command = args.shift().toLowerCase();
       var currentTime = +new Date();
-      if(command=='krewl'){
+      if(command=='krewlgate'){
         krewl.call(message.author.id, message.channel);
       }
 
