@@ -9,7 +9,7 @@ function Fun(client, logger, memory){
 		const command = args.shift().toLowerCase();
 
 		switch(command){
-			case 'ouul':
+			case 'ouulthululu':
             	message.channel.send('https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif');
             break;
 		}
