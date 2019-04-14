@@ -13,7 +13,7 @@ function Callout(client, logger, memory){
 	        //make sure it's non-obtrusive, run once every hour
 	        if( !writingMemory.cooldown || (currentTime >= writingMemory.cooldown) ){
 	            //reset start and counter when banter is not resumed within 15 minutes
-	            if( !writingMemory.start || (currentTime - writingMemory.start) > (60 * 15 * 1000) ){
+	            if( !writingMemory.start || (currentTime - writingMemory.start) > (60 * 5 * 1000) ){
 	                writingMemory.count = 0;
 	                writingMemory.start = currentTime;
 	            }
@@ -26,7 +26,7 @@ function Callout(client, logger, memory){
 	                channel.send('All you guys talk about is writing. When are you going to start? :thinking:');
 
 	                // make sure it's not fired again for at least an hour
-	                writingMemory.cooldown = currentTime + (60 * 60 * 1000);
+	                writingMemory.cooldown = currentTime + (60 * 60 * 1000 * 3);
 	                writingMemory.count = 0;
 	            }
 	        }

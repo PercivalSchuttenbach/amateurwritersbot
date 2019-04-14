@@ -67,13 +67,28 @@ function Krewlgate(Discord, client, logger, memory){
       checkForKrewlGate(message.author.id, message.content, currentTime, message.channel);
   });
 
+  function randomHeartReply(username){
+      var messages = Array(
+        "I :heart: my boy " + username + " We bots stand united.",
+        "Image? what image? :rolling_eyes:",
+        username + " for president!",
+        "Mr. :spy:"
+      );
+
+      return messages[Math.floor(Math.random() * messages.length)];
+  }
+
   //krewl retalliaton
   client.on("messageReactionAdd", function(messageReaction, user){
-    if(!user.bot && messageReaction.message.author.id == "562331981007028237"){
-        if(user.id=="180006018837774336" && messageReaction.emoji.identifier == "%E2%9D%A4"){
-          if(messageReaction.message.content.indexOf(krewlimage) > -1){
-            messageReaction.message.edit("I :heart: my boy " + user.toString() + " We bots stand united.");
-          }
+    var message = messageReaction.message;
+    if( !user.bot && message.author.id == "562331981007028237"
+        && user.id=="180006018837774336"
+        && messageReaction.emoji.identifier == "%E2%9D%A4"){
+        
+        if(message.embeds[0].image.url.indexOf(krewlimage) > -1){
+          const embed = new Discord.RichEmbed();
+          embed.setDescription( randomHeartReply(user.toString()) );
+          message.edit(embed);
         }
     }
   });

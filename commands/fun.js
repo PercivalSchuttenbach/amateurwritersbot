@@ -8,10 +8,19 @@ function Fun(Discord, client, logger, memory){
 		const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
 		const command = args.shift().toLowerCase();
 
+		const embed = new Discord.RichEmbed();
+
 		switch(command){
 			case 'ouulthululu':
-				const embed = new Discord.RichEmbed();
 				embed.setImage('https://cdn.discordapp.com/attachments/559790958238105611/562936235471929356/oothulurises.gif');
+            	message.channel.send(embed);
+            break;
+            case 'motivated':
+	            var image = "https://cdn.discordapp.com/attachments/522773675263655983/567039672648204308/gzfy1bez4t311_1.png";
+	            if(message.author.username=="Ouul"){
+	            	image = "https://media.discordapp.net/attachments/522773675263655983/564112585620979712/OuulMotivated2.png";
+	            }
+	            embed.setImage(image);
             	message.channel.send(embed);
             break;
 		}
