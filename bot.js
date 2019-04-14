@@ -100,7 +100,7 @@ client.on("message", message => {
         break;
         case 'help':
             message.channel.send(message.author.toString() + ' I agree. But I doubt if I am the right person? :thinking:');
-            message.author.send('**~random**: will choose one of the masterdoc channels for you to pick a story from and critique.\n**~choose** *option-1 option-2 option-3*: will choose one of the listed options for you.\n**~ouulthululu**: summons the Ouul\n**~krewlgate**: that which we do not speak of.');
+            message.author.send('**~random**: will choose one of the masterdoc channels for you to pick a story from and critique.\n**~choose** *option-1 option-2 option-3*: will choose one of the listed options for you.\n**~ouulthululu**: summons the Ouul\n**~motivated**: The Meme\n**~krewlgate**: that which we do not speak of.');
         break;
     }
 
