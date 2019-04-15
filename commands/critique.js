@@ -3,7 +3,7 @@ function Critique(Discord, client, logger, memory){
 	const CRITIQUED = "%F0%9F%92%AC";
 	const TOREAD = "%E2%8C%9B";
 	const READING = "%F0%9F%91%93";
-	const CHANNELID = ["522776615462109186"]; //567068879944155139
+	const CHANNELID = ["522776615462109186", "522777307161559061"]; //567068879944155139
 
 	function Work(workId, workTitle){
 		var id = workId;
@@ -251,17 +251,32 @@ function Critique(Discord, client, logger, memory){
 			});
 		}
 
+		function loopChannels(step, finalStep){
+			var channels = CHANNELID.slice();
+
+			function next(){
+				var channel = channels.shift();
+				if(channel){
+					fetchAllMessages(channel, {limit: 100}, message.author, step);
+					setTimeout(function(){
+						checkPromises(next);
+					},1000);
+				}
+				else{
+					finalStep();
+				}
+			}
+
+			next();
+		}
+
 		this.getDir = function(type, author){
 			var updated = DirStore.getLastUpdated();
 			if(!updated || ( (+new Date() - updated) > UPDATEAFTER ) ){
 				logger.info("No directory in memory");
 				//botmessage.delete();
 
-				fetchAllMessages(CHANNELID[0], {limit: 100}, message.author, buildDir);
-				setTimeout(function(){
-					checkPromises(dirBuild);
-				},1000);
-
+				loopChannels(buildDir, dirBuild);
 			}
 		};
 
