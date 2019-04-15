@@ -623,7 +623,7 @@ function Critique(Discord, client, logger, memory){
 				    				}else{
 				    					author.send(item.getLink());
 				    					botmessage.clearReactions().then(function(){
-				    						botmessage.edit("The link for " + item.getName() + " by " + item.getMessage().author.username + " will be send by DM.");
+				    						botmessage.edit(author.toString() + " the link for " + item.getName() + " by " + item.getMessage().author.username + " will be send by DM.");
 				    					});
 				    				}
 					        	}
