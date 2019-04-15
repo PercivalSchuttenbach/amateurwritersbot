@@ -432,7 +432,7 @@ function Critique(Discord, client, logger, memory){
 			var critiquer = CritiqueStore.get(message.author.id);
 			var list = critiquer.list();
 			if(!list){
-				list = "You have nothing in your critique listings at the moment. \"run ~critique update\" to update list";
+				list = "You have nothing in your critique listings at the moment. Click on :hourglass: :eyeglasses: :speech_balloon: underneath a message in the critique channels.";
 			}else{
 				list = message.author.toString() + " your stats:\n" + list + "**Legend:**\n:hourglass:: to read.\n:eyeglasses:: currently reading.\n:speech_balloon:: critiqued.";
 			}
