@@ -53,9 +53,9 @@ if(client.commands.fun){
 if(client.commands.tools){
     client.commands.tools.init(client, logger, memory);
 }
-// if(client.commands.critique){
-//     client.commands.critique.init(Discord, client, logger, memory);
-// }
+if(client.commands.critique){
+    client.commands.critique.init(Discord, client, logger, memory);
+}
 
 //Make sure all mesages are checked
 client.on('raw', packet => {
