@@ -13,12 +13,30 @@ function Critique(Discord, client, logger, memory){
 		var toread = false;
 		var description;
 		var link;
+		var thread;
+		var users = false;
 
 		this.checkForRemoval = function(){
 			if(!reading && !critique && !toread){
 				return true;
 			}
 			return false;
+		};
+
+		this.setUsers = function(us){
+			users = us;
+		};
+
+		this.getUsers = function(){
+			return users;
+		};
+
+		this.setMessage = function(m){
+			thread = m;
+		};
+
+		this.getMessage = function(){
+			return thread;
 		};
 
 		this.getId = function(){
@@ -113,6 +131,9 @@ function Critique(Discord, client, logger, memory){
 		this.getLastUpdated = function(){
 			return lastupdated;
 		};
+		this.setLastUpdated = function(timestamp){
+			lastupdated = timestamp;
+		};
 
 		this.get = function(writerId){
 			if(!dirStore[writerId]){
@@ -140,7 +161,7 @@ function Critique(Discord, client, logger, memory){
 		function Critiquer(critquerId){
 			var id = critquerId;
 			var writers = {};
-			var update = null;
+			var update = false;
 
 			this.get = function(writerId){
 				if(!writers[writerId]){
@@ -163,7 +184,7 @@ function Critique(Discord, client, logger, memory){
 				update = timestamp;
 			};
 
-			this.getUpdate = function(timestamp){
+			this.getUpdate = function(){
 				return update;
 			};
 
@@ -187,7 +208,7 @@ function Critique(Discord, client, logger, memory){
 						}
 						message+= "\n";
 					}
-					message+="\n\n"
+					message+="\n"
 				}
 
 				return message;
@@ -271,12 +292,15 @@ function Critique(Discord, client, logger, memory){
 		}
 
 		this.getDir = function(type, author){
+			stats = "directory";
 			var updated = DirStore.getLastUpdated();
 			if(!updated || ( (+new Date() - updated) > UPDATEAFTER ) ){
 				logger.info("No directory in memory");
 				//botmessage.delete();
 
 				loopChannels(buildDir, dirBuild);
+			}else{
+				showDir(botmessage, message.author);
 			}
 		};
 
@@ -301,12 +325,22 @@ function Critique(Discord, client, logger, memory){
 						}
 					}
 					work.setLink(m.url);
+					work.setMessage(m);
 				}
 			});
 		}
 
 		function dirBuild(){
+			DirStore.setLastUpdated(+new Date());
 			showDir(botmessage, message.author);
+		}
+
+		function updateStats(){
+			DirStore.setLastUpdated(+new Date());
+			getCritiquedStats();
+			setTimeout(function(){
+				checkPromises(showStats);
+			},1000);
 		}
 
 		
@@ -315,21 +349,31 @@ function Critique(Discord, client, logger, memory){
 
 			//@TODO loop over all channels
 
-			stats = '#' + client.channels.get(CHANNELID[0]).name;
+			/*stats = '#' + client.channels.get(CHANNELID[0]).name;
 			fetchAllMessages(CHANNELID[0], {limit: 100}, message.author, getCritiquedStats);
 			setTimeout(function(){
 				checkPromises(showStats);
-			},1000);
+			},1000);*/
+			
+			var updated = DirStore.getLastUpdated();
+			if(!updated || ( (+new Date() - updated) > UPDATEAFTER ) ){
+				//build a new
+				stats = "directory";
+				loopChannels(buildDir, updateStats);
+
+				logger.info("have to build a new one");
+			}else{
+				stats = "critiques";
+				getCritiquedStats();
+				setTimeout(function(){
+					checkPromises(showStats);
+				},1000);
+			}
 		};
 
 		this.updateAll = function(){
-			fetchAllMessages(CHANNELID[0], {limit: 100}, message.author, addReactions);
-			setTimeout(function(){
-				checkPromises(doneReacting);
-			},1000);
+			loopChannels(addReactions, doneReacting);
 		};
-
-
 
 		function addReactions(messages, user){
 			var docLinks = messages.filter(ms =>checkIfDocs(ms));
@@ -344,25 +388,44 @@ function Critique(Discord, client, logger, memory){
 			botmessage.edit("DONE");
 		}
 
-		function getCritiquedStats(messages, user){
-			var docLinks = messages.filter(ms =>checkIfDocs(ms) && m.reactions.size);
-			docLinks.forEach(function(m){
-				//logger.info(m.reactions.filter(r=>r.count>1&&r.users.has("212587952461578240")).size);
-				m.reactions.forEach(function(r){
-					if(	r.emoji.identifier == CRITIQUED ||
-						r.emoji.identifier == TOREAD ||
-						r.emoji.identifier == READING){
+		function getCritiquedStats(){
+			var user = message.author;
+			var writers = DirStore.getAll();
 
-						userPromises++;
-						r.fetchUsers().then(function(users){
-							if(users.has(user.id)){
-								processMessage(user, m, r.emoji.identifier);
+			for(var w in writers){
+				var works = writers[w].getAll();
+				for(var wi in works){
+					var work = works[wi];
+					
+					(function(m){
+						m.reactions.forEach(function(r){
+						
+							if(	r.emoji.identifier == CRITIQUED ||
+								r.emoji.identifier == TOREAD ||
+								r.emoji.identifier == READING){
+								if(!work.getUsers()){
+									userPromises++;
+									r.fetchUsers().then(function(users){
+										work.setUsers(users);
+										if(users.has(user.id)){
+											processMessage(user, m, r.emoji.identifier);
+										}
+										userPromises--;
+									});
+								}else{
+									var users = work.getUsers();
+									if(users.has(user.id)){
+										processMessage(user, m, r.emoji.identifier);
+									}
+								}
 							}
-							userPromises--;
 						});
-					}
-				});
-			});
+					}(work.getMessage()));
+				}
+			}
+
+				
+			//});
 		}
 
 		function showStats(){
