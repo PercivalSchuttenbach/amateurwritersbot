@@ -193,10 +193,10 @@ function Critique(Discord, client, logger, memory){
 				for(var writerId in writers){
 					var name;
 					var works = writers[writerId].getAll();
-					message += "**" + writers[writerId].getName() + "**\n";
+					message += "** " + writers[writerId].getName() + " **\n";
 					for(var workId in works){
 						var work = works[workId];
-						message+= "*" + work.getName() + "* ";
+						message+= "* " + work.getName() + " * ";
 						if(work.getReading()){
 							message+= ":eyeglasses:";
 						}
