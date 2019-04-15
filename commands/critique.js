@@ -776,23 +776,28 @@ function Critique(Discord, client, logger, memory){
 			.then(()=>message.react(CRITIQUED));
 		}
 
-		const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
-		const command = args.shift().toLowerCase();
-		const subcommand = args.shift();
-		
-		if(command=='critique'){
-			switch(subcommand){
-				case "update":
-					update(message);
-				break;
-				case "stats":
-					getStats(message);
-				break;
-				case "dir":
-					getDir(message, args);
-				break;
+		//if(message.channel.id == ""){
+			const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
+			const command = args.shift().toLowerCase();
+			const subcommand = args.shift();
+			
+			if(command=='critique'){
+				switch(subcommand){
+					case "update":
+						update(message);
+					break;
+					case "stats":
+						getStats(message);
+					break;
+					case "dir":
+						getDir(message, args);
+					break;
+					case "help":
+						message.author.send("**~critique dir**: lists all authors => works\n**~critique stats**: check who you have critiqued.");
+					break;
+				}
 			}
-		}
+		//}
 	});
 
 }
