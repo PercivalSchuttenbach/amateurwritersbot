@@ -3,7 +3,7 @@ function Critique(Discord, client, logger, memory){
 	const CRITIQUED = "%F0%9F%92%AC";
 	const TOREAD = "%E2%8C%9B";
 	const READING = "%F0%9F%91%93";
-	const CHANNELID = ["522776615462109186", "522777307161559061"]; //567068879944155139
+	const CHANNELID = ["522776615462109186", "522777307161559061","567351235699671043"]; //567068879944155139
 
 	function Work(workId, workTitle){
 		var id = workId;
@@ -249,7 +249,7 @@ function Critique(Discord, client, logger, memory){
 
 		function checkPromises(fn){
 			if(messagePromises || userPromises){
-				botmessage.edit("Retrieving " + stats + "..." + (twirl ? ":hourglass:" : ":hourglass_flowing_sand:"));
+				botmessage.edit("Retrieving for " + message.author.toString() + " " + stats + "..." + (twirl ? ":hourglass:" : ":hourglass_flowing_sand:"));
 				twirl = !twirl;
 				setTimeout(function(){
 					checkPromises(fn);
@@ -260,16 +260,18 @@ function Critique(Discord, client, logger, memory){
 		}
 
 		function fetchAllMessages(channelId, options, user, fn){
-			messagePromises++;
-			client.channels.get(channelId).fetchMessages(options).then(function(messages){
-				messagePromises--;
-				fn(messages, user);
+			if(client.channels.has(channelId)){
+				messagePromises++;
+				client.channels.get(channelId).fetchMessages(options).then(function(messages){
+					messagePromises--;
+					fn(messages, user);
 
-				if(messages.size){
-					options.before = messages.last().id;
-					fetchAllMessages(channelId, options, user, fn);
-				}
-			});
+					if(messages.size){
+						options.before = messages.last().id;
+						fetchAllMessages(channelId, options, user, fn);
+					}
+				});
+			}
 		}
 
 		function loopChannels(step, finalStep){
@@ -537,7 +539,7 @@ function Critique(Discord, client, logger, memory){
 				}
 				next = count;
 
-				botmessage.edit(title + "\n" + text);
+				botmessage.edit("**Listing directory for " + author.toString() + "**\n*" + title + "*\n" + text);
 
 				logger.info(i + " " + next + " " + ids.length);
 
@@ -566,6 +568,16 @@ function Critique(Discord, client, logger, memory){
 					if(next > 0){
 				    	prev = true;
 				    }
+				    //check using the last item what the depth is
+				    if(item['getLink']){
+				    	steps++;
+				    	await botmessage.react("%E2%AC%86").then(()=>steps--);
+				    }
+
+				    steps++;
+				    await botmessage.react("%F0%9F%87%BD").then(()=>steps--);
+				    steps++;
+				    await botmessage.react("%F0%9F%86%98").then(()=>steps--);
 
 				    const filter = (reaction, user) => {
 				    	return !user.bot && user.id == author.id && steps==0;
@@ -577,6 +589,15 @@ function Critique(Discord, client, logger, memory){
 
 				        switch (reaction.emoji.identifier){
 
+				        	case "%F0%9F%86%98":
+				        		botmessage.clearReactions().then(function(){
+				        			botmessage.edit(author.toString() + " I am sending you a DM");
+				        		});
+				        		help(author);
+				        	break;
+					        case "%E2%AC%86":
+					        	ui.reset();
+					        break;
 					        case '%E2%9E%A1':
 					            logger.info('next');
 					            showList();
@@ -585,6 +606,9 @@ function Critique(Discord, client, logger, memory){
 					        	logger.info('prev');
 					        	next -=20;
 					            showList();
+					        break;
+					        case "%F0%9F%87%BD":
+					        	botmessage.clearReactions().then(()=>botmessage.edit("aborted by user " + author.toString()));
 					        break;
 					        default:
 					        	var index = reactionMap.indexOf(reaction.emoji.identifier);
@@ -598,7 +622,9 @@ function Critique(Discord, client, logger, memory){
 				    					var test = new UI(item.getAll(), "Works of " + item.getName() + ":");
 				    				}else{
 				    					author.send(item.getLink());
-				    					botmessage.delete();
+				    					botmessage.clearReactions().then(function(){
+				    						botmessage.edit("The link for " + item.getName() + " by " + item.getMessage().author.username + " will be send by DM.");
+				    					});
 				    				}
 					        	}
 					        break;
@@ -609,6 +635,12 @@ function Critique(Discord, client, logger, memory){
 				       //botmessage.delete();
 				    });
 				});
+			}
+
+			this.reset = function(){
+				prev = null;
+				next = 0;
+				showList();
 			}
 
 			logger.info('passed 3');
@@ -634,7 +666,7 @@ function Critique(Discord, client, logger, memory){
 			logger.info('passed 4');
 
 
-			botmessage.edit("The directory is build");
+			botmessage.edit("The directory is build for " + author.toString());
 			showList();
 
 		};
@@ -653,7 +685,7 @@ function Critique(Discord, client, logger, memory){
 		if(!args.length){
 			logger.info("get entire doc");
 
-			message.channel.send("Fetching whole directory...:hourglass:").then(function(botmessage){
+			message.channel.send("Fetching whole directory for " + message.author.toString() + " ...:hourglass:").then(function(botmessage){
 				var fd = new FetchDate(message, botmessage);
 				fd.getDir();
 			});
@@ -721,11 +753,19 @@ function Critique(Discord, client, logger, memory){
 		critiquer.setUpdate(+new Date());
 	}
 
+	function help(author){
+		author.send("**~critique dir**: lists all authors => works\n**~critique stats**: check who you have critiqued.");
+	}
+
 	client.on("messageReactionAdd", function(messageReaction, user){
 		if(user.bot) return;
 
 		var message = messageReaction.message;
 		var emoji = messageReaction.emoji.identifier;
+
+		if(message.channel.id=="567068929994784798"){
+			logger.info(emoji);
+		}
 
 		if(CHANNELID.indexOf(message.channel.id) > -1 && checkIfDocs(message)){
 			processMessage(user, message, emoji);
@@ -776,12 +816,12 @@ function Critique(Discord, client, logger, memory){
 			.then(()=>message.react(CRITIQUED));
 		}
 
-		//if(message.channel.id == ""){
+		//if(message.channel.id == "567351040186515456"){
 			const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
 			const command = args.shift().toLowerCase();
 			const subcommand = args.shift();
 			
-			if(command=='critique'){
+			if(command=='critique1'){
 				switch(subcommand){
 					case "update":
 						update(message);
@@ -794,7 +834,7 @@ function Critique(Discord, client, logger, memory){
 					break;
 					case "help":
 						message.channel.send(message.author.toString() + " I am sending you a DM");
-						message.author.send("**~critique dir**: lists all authors => works\n**~critique stats**: check who you have critiqued.");
+						help(message.author);
 					break;
 				}
 			}

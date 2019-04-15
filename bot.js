@@ -41,18 +41,18 @@ for (var file in commandFiles) {
     client.commands[command.name] = command;
 }
 
-if(client.commands.krewlgate){
-    client.commands.krewlgate.init(Discord, client, logger, memory);
-}
-if(client.commands.callout){
-     client.commands.callout.init(client, logger, memory);
-}
-if(client.commands.fun){
-     client.commands.fun.init(Discord, client, logger, memory);
-}
-if(client.commands.tools){
-    client.commands.tools.init(client, logger, memory);
-}
+// if(client.commands.krewlgate){
+//     client.commands.krewlgate.init(Discord, client, logger, memory);
+// }
+// if(client.commands.callout){
+//      client.commands.callout.init(client, logger, memory);
+// }
+// if(client.commands.fun){
+//      client.commands.fun.init(Discord, client, logger, memory);
+// }
+// if(client.commands.tools){
+//     client.commands.tools.init(client, logger, memory);
+// }
 if(client.commands.critique){
     client.commands.critique.init(Discord, client, logger, memory);
 }
