@@ -816,7 +816,7 @@ function Critique(Discord, client, logger, memory){
 			.then(()=>message.react(CRITIQUED));
 		}
 
-		//if(message.channel.id == "567351040186515456"){
+		if(message.channel.id == "567351040186515456"){
 			const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
 			const command = args.shift().toLowerCase();
 			const subcommand = args.shift();
@@ -838,7 +838,7 @@ function Critique(Discord, client, logger, memory){
 					break;
 				}
 			}
-		//}
+		}
 	});
 
 }
