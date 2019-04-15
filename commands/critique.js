@@ -821,7 +821,7 @@ function Critique(Discord, client, logger, memory){
 			const command = args.shift().toLowerCase();
 			const subcommand = args.shift();
 			
-			if(command=='critique1'){
+			if(command=='critique'){
 				switch(subcommand){
 					case "update":
 						update(message);
