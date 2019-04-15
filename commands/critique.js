@@ -793,6 +793,7 @@ function Critique(Discord, client, logger, memory){
 						getDir(message, args);
 					break;
 					case "help":
+						message.channel.send(message.author.toString() + " I am sending you a DM");
 						message.author.send("**~critique dir**: lists all authors => works\n**~critique stats**: check who you have critiqued.");
 					break;
 				}
