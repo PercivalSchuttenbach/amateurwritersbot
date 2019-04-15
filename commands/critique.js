@@ -452,6 +452,7 @@ function Critique(Discord, client, logger, memory){
 			logger.info('passed 2');
 
 			function showList(){
+				var steps = 0;
 				logger.info("display list");
 				var text = "";
 				var count = next + 10;
@@ -480,18 +481,21 @@ function Critique(Discord, client, logger, memory){
 				//add reactions
 				botmessage.clearReactions().then(async function(){
 					if(prev){
-						await botmessage.react("%E2%AC%85");
+						steps++;
+						await botmessage.react("%E2%AC%85").then(()=>steps--);
 					}
 					try{
 						for(var i=1;i<n;i++){
-							await botmessage.react(getIndicatorReact(i));
+							steps++;
+							await botmessage.react(getIndicatorReact(i)).then(()=>steps--);
 						}
 					}catch(error){
 						logger.info(error);
 					}
 					if(next<=ids.length){
 						try{
-							await botmessage.react("%E2%9E%A1");
+							steps++;
+							await botmessage.react("%E2%9E%A1").then(()=>steps--);
 						}catch(error){
 							logger.info("failed");
 						}
@@ -499,49 +503,49 @@ function Critique(Discord, client, logger, memory){
 					if(next > 0){
 				    	prev = true;
 				    }
+
+				    const filter = (reaction, user) => {
+				    	return !user.bot && user.id == author.id && steps==0;
+					};
+
+					botmessage.awaitReactions(filter, { max: 1, time: 60000, errors: ['time'] })
+				    .then(collected => {
+				        const reaction = collected.first();
+
+				        switch (reaction.emoji.identifier){
+
+					        case '%E2%9E%A1':
+					            logger.info('next');
+					            showList();
+				            break;
+					        case "%E2%AC%85":
+					        	logger.info('prev');
+					        	next -=20;
+					            showList();
+					        break;
+					        default:
+					        	var index = reactionMap.indexOf(reaction.emoji.identifier);
+					        	if(index > -1){
+					        		index = next - (10-index) - 1;
+					        		logger.info("chosen: " + index);
+					        		var item = collection[ids[index]];
+				    				
+				    				if(!item['getLink']){
+				    					logger.info("get works");
+				    					var test = new UI(item.getAll(), "Works of " + item.getName() + ":");
+				    				}else{
+				    					author.send(item.getLink());
+				    					botmessage.delete();
+				    				}
+					        	}
+					        break;
+					    }
+				        
+				    })
+				    .catch(collected => {
+				       //botmessage.delete();
+				    });
 				});
-
-				const filter = (reaction, user) => {
-				    return !user.bot && user.id == author.id;
-				};
-
-				botmessage.awaitReactions(filter, { max: 1, time: 60000, errors: ['time'] })
-			    .then(collected => {
-			        const reaction = collected.first();
-
-			        switch (reaction.emoji.identifier){
-
-				        case '%E2%9E%A1':
-				            logger.info('next');
-				            showList();
-			            break;
-				        case "%E2%AC%85":
-				        	logger.info('prev');
-				        	next -=20;
-				            showList();
-				        break;
-				        default:
-				        	var index = reactionMap.indexOf(reaction.emoji.identifier);
-				        	if(index > -1){
-				        		index = next - (10-index) - 1;
-				        		logger.info("chosen: " + index);
-				        		var item = collection[ids[index]];
-			    				
-			    				if(!item['getLink']){
-			    					logger.info("get works");
-			    					var test = new UI(item.getAll(), "Works of " + item.getName() + ":");
-			    				}else{
-			    					author.send(item.getLink());
-			    					botmessage.delete();
-			    				}
-				        	}
-				        break;
-				    }
-			        
-			    })
-			    .catch(collected => {
-			       //botmessage.delete();
-			    });
 			}
 
 			logger.info('passed 3');
