@@ -34,7 +34,7 @@ function Tools(client, logger, memory){
             case 'choose':
                 var intRandom = Math.floor(Math.random() * args.length);
                 var choice = args[intRandom];
-                message.channel.send(message.author.toString() + 'I chose ' + choice + ' for you');
+                message.channel.send(message.author.toString() + ' I chose ' + choice + ' for you');
             break;
 		}
 	});
