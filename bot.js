@@ -103,7 +103,7 @@ client.on("message", message => {
         break;
         case 'help':
             message.channel.send(message.author.toString() + " I am sending you a DM");
-            message.author.send('**~critique help**\n**~random**: will choose one of the masterdoc channels for you to pick a story from and critique.\n**~choose** *option-1 option-2 option-3*: will choose one of the listed options for you.\n**~ouulthululu**: summons the Ouul\n**~motivated**: The Meme\n**~krewlgate**: that which we do not speak of.');
+            message.author.send('**~critique help**\n**~random**: will choose one of the masterdoc channels for you to pick a story from and critique.\n**~choose** *option-1 option-2 option-3*: will choose one of the listed options for you.\n**~tictactoe @username**: invites the mentioned player for a game of tic tac toe\n**~ouulthululu**: summons the Ouul\n**~motivated**: The Meme\n**~krewlgate**: that which we do not speak of.');
         break;
     }
 
