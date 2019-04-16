@@ -223,6 +223,13 @@ function Critique(Discord, client, logger, memory){
 			}
 			return critiqueStore[critquerId];
 		};
+
+		this.has = function(critquerId){
+			if(critiqueStore[critquerId]){
+				return true;
+			}
+			return false;
+		};
 	};
 
 	function checkIfDocs(message){
@@ -405,7 +412,7 @@ function Critique(Discord, client, logger, memory){
 							if(	r.emoji.identifier == CRITIQUED ||
 								r.emoji.identifier == TOREAD ||
 								r.emoji.identifier == READING){
-								if(!work.getUsers()){
+								//if(!work.getUsers()){
 									userPromises++;
 									r.fetchUsers().then(function(users){
 										work.setUsers(users);
@@ -414,12 +421,12 @@ function Critique(Discord, client, logger, memory){
 										}
 										userPromises--;
 									});
-								}else{
-									var users = work.getUsers();
-									if(users.has(user.id)){
-										processMessage(user, m, r.emoji.identifier);
-									}
-								}
+								// }else{
+								// 	var users = work.getUsers();
+								// 	if(users.has(user.id)){
+								// 		processMessage(user, m, r.emoji.identifier);
+								// 	}
+								// }
 							}
 						});
 					}(work.getMessage()));
@@ -448,7 +455,7 @@ function Critique(Discord, client, logger, memory){
 	//working on showing waiting message and updating list
 	function getStats(message){
 		var critiquer = CritiqueStore.get(message.author.id);
-		if(!critiquer.getUpdate() || (+new Date - critiquer.getUpdate() > (60 * 60 * 24 * 1000) ) ){
+		if(!critiquer.getUpdate()){
 			message.channel.send("Retrieving stats...:hourglass:").then(function(botmessage){
 				var fd = new FetchDate(message, botmessage);
 				fd.getCritiqued();
@@ -763,12 +770,10 @@ function Critique(Discord, client, logger, memory){
 		var message = messageReaction.message;
 		var emoji = messageReaction.emoji.identifier;
 
-		if(message.channel.id=="567068929994784798"){
-			logger.info(emoji);
-		}
-
 		if(CHANNELID.indexOf(message.channel.id) > -1 && checkIfDocs(message)){
-			processMessage(user, message, emoji);
+			if(CritiqueStore.has(user.id)){
+				processMessage(user, message, emoji);
+			}
 		}
 	});
 
@@ -779,25 +784,27 @@ function Critique(Discord, client, logger, memory){
 		var emoji = messageReaction.emoji.identifier;
 
 		if(CHANNELID.indexOf(message.channel.id) > -1 && checkIfDocs(message)){
-			var critiquer = CritiqueStore.get(user.id);
-			var writer = critiquer.get(message.author.id);
-			var work = writer.get(message.id);
+			if(CritiqueStore.has(user.id)){
+				var critiquer = CritiqueStore.get(user.id);
+				var writer = critiquer.get(message.author.id);
+				var work = writer.get(message.id);
 
-			switch(emoji){
-				case CRITIQUED:
-					work.setCritique(false);
-				break;
-				case READING:
-					work.setReading(false);
-				break;
-				case TOREAD:
-					work.setToread(false);
-				break;
+				switch(emoji){
+					case CRITIQUED:
+						work.setCritique(false);
+					break;
+					case READING:
+						work.setReading(false);
+					break;
+					case TOREAD:
+						work.setToread(false);
+					break;
+				}
+
+				clearWork(critiquer, writer, work);
+
+				critiquer.setUpdate(+new Date());
 			}
-
-			clearWork(critiquer, writer, work);
-
-			critiquer.setUpdate(+new Date());
 		}
 
 	});
@@ -816,7 +823,7 @@ function Critique(Discord, client, logger, memory){
 			.then(()=>message.react(CRITIQUED));
 		}
 
-		if(message.channel.id == "567351040186515456"){
+		if(message.channel.id == "567351040186515456" || message.channel.id == "567068929994784798"){
 			const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
 			const command = args.shift().toLowerCase();
 			const subcommand = args.shift();
