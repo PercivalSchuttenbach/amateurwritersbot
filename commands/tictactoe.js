@@ -167,7 +167,7 @@ function TicTacToe(Discord, client, logger, memory){
 				var table = wintable[t];
 				var count = 0;
 				for(var p in table){
-					if(table[p] && table[p] == pmoves[p]){
+					if(table[p] && pmoves[p]){
 						count++;
 					}
 				}
