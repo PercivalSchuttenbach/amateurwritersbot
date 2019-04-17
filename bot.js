@@ -59,6 +59,9 @@ if(client.commands.critique){
 if(client.commands.tictactoe){
     client.commands.tictactoe.init(Discord, client, logger, memory);
 }
+if(client.commands.hangman){
+    client.commands.hangman.init(Discord, client, logger, memory);
+}
 
 //Make sure all mesages are checked
 client.on('raw', packet => {
