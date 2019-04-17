@@ -911,7 +911,7 @@ function Critique(Discord, client, logger, memory){
 
 	function getDir(message){
 
-		if(!message.mentions){
+		if(!message.mentions.size()){
 			logger.info("get entire doc");
 
 			message.channel.send("Fetching whole directory for " + message.author.toString() + " ...:hourglass:").then(function(botmessage){
