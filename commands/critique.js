@@ -911,7 +911,7 @@ function Critique(Discord, client, logger, memory){
 
 	function getDir(message){
 
-		if(message.mentions.users){
+		if(message.mentions.users.size){
 			getDirByAuthor(message);
 		}else{
 			logger.info("get entire doc");
