@@ -1,7 +1,7 @@
 function Hangman(Discord, client, logger, memory){
 
 	const GAMECHANNEL = "567068929994784798";
-	const TIME = 10;
+	const TIME = 60;
 
 	var game;
 	var canjoin;
