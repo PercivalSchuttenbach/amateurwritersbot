@@ -1,6 +1,6 @@
 function Hangman(Discord, client, logger, memory){
 
-	const GAMECHANNEL = "567068929994784798";
+	const GAMECHANNEL = "567351040186515456";
 	const TIME = 60;
 
 	var game;
