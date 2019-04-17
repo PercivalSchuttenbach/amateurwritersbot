@@ -5,7 +5,7 @@ function Critique(Discord, client, logger, memory){
 	const CRITIQUED = "%F0%9F%92%AC";
 	const TOREAD = "%E2%8C%9B";
 	const READING = "%F0%9F%91%93";
-	const CHANNELID = ["522776615462109186", "522777307161559061","567351235699671043"]; //567068879944155139
+	const CHANNELID = ["522776615462109186", "522777307161559061","567351235699671043","567068879944155139"]; //567068879944155139
 
 	var icons = {"reading":":eyeglasses:","toread":":hourglass:"};
 
@@ -332,7 +332,7 @@ function Critique(Discord, client, logger, memory){
 			next();
 		}
 
-		this.getDir = function(type, author){
+		this.getDir = function(){
 			stats = "directory";
 			var updated = DirStore.getLastUpdated();
 			if(!updated || ( (+new Date() - updated) > UPDATEAFTER ) ){
@@ -427,6 +427,19 @@ function Critique(Discord, client, logger, memory){
 				setTimeout(function(){
 					checkPromises(fn);
 				},1000);
+			}
+		};
+
+		this.getDirListing = function(fn){
+			var updated = DirStore.getLastUpdated();
+			if(!updated || ( (+new Date() - updated) > UPDATEAFTER ) ){
+				//build a new
+				stats = "directory";
+				loopChannels(buildDir, updateListing(fn));
+
+				logger.info("have to build a new one");
+			}else{
+				fn();
 			}
 		};
 
@@ -637,9 +650,9 @@ function Critique(Discord, client, logger, memory){
 		}
 	}
 
-	function handleCritiqueListing(message, author, works, action){
+	function handleDirListing(message, author, works, writer){
 		if(!works.length){
-			message.reply("You have not marked anything as " + action + " " + icons[action] + " at this moment.");
+			message.reply("There are no items for " + writer + " listed in the directory.");
 			return;
 		}
 		if(works.length==1){
@@ -649,9 +662,28 @@ function Critique(Discord, client, logger, memory){
 		}
 		else{
 			//more than one. List the bugger
-			message.reply("retrieving titles you have marked as " + action + " " + icons[action] ).then(function(botmessage){
+			message.reply("retrieving titles of " + writer ).then(function(botmessage){
 				var  test = new DirUI(botmessage, author);
-				test.listDir(works, "These are the works you are currently " + action + " " + icons[action] + ":", true);
+				test.listDir(works, "These are the works that are listed for " + writer);
+			});
+		}
+	}
+
+	function handleCritiqueListing(message, author, works, action, flag){
+		if(!works.length){
+			message.reply("You have not marked anything as " + action + " " + (icons[action] ? icons[action] : "") + " at this moment.");
+			return;
+		}
+		if(works.length==1){
+			var work = works[0];
+			message.reply("the link for " + work.getName() + " by " + work.getMessage().author.username + " will be sent by DM.");
+			author.send(work.getLink());
+		}
+		else{
+			//more than one. List the bugger
+			message.reply("retrieving titles you have marked as " + action + " " + (icons[action] ? icons[action] : "") ).then(function(botmessage){
+				var  test = new DirUI(botmessage, author);
+				test.listDir(works, "These are the works you are currently " + action + " " + (icons[action] ? icons[action] : "") + ":", true);
 			});
 		}
 	}
@@ -881,10 +913,6 @@ function Critique(Discord, client, logger, memory){
 
 		logger.info(args);
 
-		function checkIfType(arg){
-			return ["#short", "#chapter"].indexOf(arg) > -1;
-		}
-
 		if(!args.length){
 			logger.info("get entire doc");
 
@@ -897,28 +925,36 @@ function Critique(Discord, client, logger, memory){
 		}
 
 		//var fd = FetchDate(message, botmessage);
-		if(args.length > 2){
+		if(args.length > 1){
 			// ERRUR
 			logger.info("Error: to many arguments. ~critique dir [type] [author]");
 			return;
 		}
-		if(args.length==2){
-			if( !checkIfType(args[0]) ){
-				//ERRUR
-				logger.info("Wrong type supplied. Error: ~critique dir [type] [author]");
-				return;
-			} else {
-				//first arg type, second arg author
-				logger.info("Type: " + args[0] + ". Author: " + args[1]);
-			}
-		}
-		else {
-			if( checkIfType(args[0]) ){
-				// filter by type
-				logger.info("filter by type: " + args[0]);
-			} else {
-				//filter by author
-				logger.info("filter by author: " + args[0]);
+		
+		getDirByAuthor(args[0], message);
+	}
+
+	function getDirByAuthor(subcommand, message){
+		if(!DirStore.getLastUpdated()){
+			message.channel.send("Retrieving stats...:hourglass:").then(function(botmessage){
+				var fd = new FetchDate(message, botmessage);
+				fd.getDirListing(function(){
+					getDirByAuthor(subcommand, message);
+				});
+			});
+		}else{
+			var author = message.author;
+			var writer = client.users.find(user=>user.username.toLowerCase()==subcommand.toLowerCase());
+			if(writer){
+				var writerStore = DirStore.get(writer.id);
+				if(writerStore){
+					var works = Object.values(writerStore.getAll());
+					handleDirListing(message, author, works, subcommand);
+				}else{
+					message.reply("No works by " + writer.username + " have been posted in the critique channel.");
+				}
+			}else{
+				message.reply("Username specified is not on this server.");
 			}
 		}
 	}
@@ -1007,6 +1043,36 @@ function Critique(Discord, client, logger, memory){
 
 	});
 
+	client.on("messageUpdate", function(oldmessage, message){
+		if(CHANNELID.indexOf(message.channel.id) > -1 && checkIfDocs(message)){
+
+			var writer = DirStore.get(message.author.id);
+			if(!writer){
+				writer = DirStore.create(message.author.id, message.author.username);
+			}
+			
+			var work = writer.get(message.id);
+			if(!work){
+				work = writer.create(message.id);
+				work.setLink(message.url);
+				work.setMessage(message);
+
+				message.react(TOREAD)
+				.then(()=>message.react(READING))
+				.then(()=>message.react(CRITIQUED));
+			}
+
+			if(message.embeds.length){
+				if(message.embeds[0].title){
+					work.setName(message.embeds[0].title);
+				}
+				if(message.embeds[0].description){
+					work.setDescription(message.embeds[0].description);
+				}
+			}
+		}
+	});
+
 	//%F0%9F%92%AC   critique
 	//%E2%9D%A4	reading
 	//%F0%9F%95%90 read later
@@ -1016,6 +1082,14 @@ function Critique(Discord, client, logger, memory){
 	  	}
 
 		if(CHANNELID.indexOf(message.channel.id) > -1 && checkIfDocs(message)){
+			var writer = DirStore.get(message.author.id);
+			if(!writer){
+				writer = DirStore.create(message.author.id, message.author.username);
+			}
+			var work = writer.create(message.id);
+			work.setLink(message.url);
+			work.setMessage(message);
+
 			message.react(TOREAD)
 			.then(()=>message.react(READING))
 			.then(()=>message.react(CRITIQUED));
