@@ -553,17 +553,17 @@ function Critique(Discord, client, logger, memory){
 		}
 	}
 
-	function getNextWorkByAuthor(subcommand, message){
+	function getNextWorkByAuthor(message){
 		if(!DirStore.getLastUpdated()){
 			message.channel.send("Retrieving stats...:hourglass:").then(function(botmessage){
 				var fd = new FetchDate(message, botmessage);
 				fd.getCritiquedListing(function(){
-					getNextWorkByAuthor(subcommand, message);
+					getNextWorkByAuthor(message);
 				});
 			});
 		}else{
 			var author = message.author;
-			var writer = client.users.find(user=>user.username.toLowerCase()==subcommand.toLowerCase());
+			var writer = message.mentions.users.first();
 			if(writer){
 				var writerStore = DirStore.get(writer.id);
 				if(writerStore){
@@ -909,11 +909,9 @@ function Critique(Discord, client, logger, memory){
 		test.listDir(DirStore.getAll(), "Listing writers:");
 	}
 
-	function getDir(message, args){
+	function getDir(message){
 
-		logger.info(args);
-
-		if(!args.length){
+		if(!message.mentions){
 			logger.info("get entire doc");
 
 			message.channel.send("Fetching whole directory for " + message.author.toString() + " ...:hourglass:").then(function(botmessage){
@@ -923,33 +921,26 @@ function Critique(Discord, client, logger, memory){
 
 			return;
 		}
-
-		//var fd = FetchDate(message, botmessage);
-		if(args.length > 1){
-			// ERRUR
-			logger.info("Error: to many arguments. ~critique dir [type] [author]");
-			return;
-		}
 		
-		getDirByAuthor(args[0], message);
+		getDirByAuthor(message);
 	}
 
-	function getDirByAuthor(subcommand, message){
+	function getDirByAuthor(message){
 		if(!DirStore.getLastUpdated()){
 			message.channel.send("Retrieving stats...:hourglass:").then(function(botmessage){
 				var fd = new FetchDate(message, botmessage);
 				fd.getDirListing(function(){
-					getDirByAuthor(subcommand, message);
+					getDirByAuthor(message);
 				});
 			});
 		}else{
 			var author = message.author;
-			var writer = client.users.find(user=>user.username.toLowerCase()==subcommand.toLowerCase());
+			var writer = message.mentions.users.first();
 			if(writer){
 				var writerStore = DirStore.get(writer.id);
 				if(writerStore){
 					var works = Object.values(writerStore.getAll());
-					handleDirListing(message, author, works, subcommand);
+					handleDirListing(message, author, works, writer.username);
 				}else{
 					message.reply("No works by " + writer.username + " have been posted in the critique channel.");
 				}
@@ -1109,7 +1100,7 @@ function Critique(Discord, client, logger, memory){
 						getStats(message);
 					break;
 					case "dir":
-						getDir(message, args);
+						getDir(message);
 					break;
 					case "reading":
 						getReading(message);
@@ -1125,7 +1116,12 @@ function Critique(Discord, client, logger, memory){
 						getRandomWork(message);
 					break;
 					default:
-						getNextWorkByAuthor(subcommand, message);
+						if(message.mentions){
+							getNextWorkByAuthor(message);
+						}
+						else{
+							message.reply("unknown ~critique command");
+						}
 					break;
 				}
 			}
