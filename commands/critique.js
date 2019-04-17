@@ -5,7 +5,7 @@ function Critique(Discord, client, logger, memory){
 	const CRITIQUED = "%F0%9F%92%AC";
 	const TOREAD = "%E2%8C%9B";
 	const READING = "%F0%9F%91%93";
-	const CHANNELID = ["522776615462109186", "522777307161559061","567351235699671043","567068879944155139"]; //567068879944155139
+	const CHANNELID = ["522776615462109186", "522777307161559061","567351235699671043"]; //567068879944155139
 
 	var icons = {"reading":":eyeglasses:","toread":":hourglass:"};
 
