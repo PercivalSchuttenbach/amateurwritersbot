@@ -1,5 +1,7 @@
 function TicTacToe(Discord, client, logger, memory){
 
+	const GAMECHANNEL = "568459117417725970";
+
 	function Game(player1, player2, channel){
 		var displaytext;
 		var botmessage;
@@ -241,6 +243,10 @@ function TicTacToe(Discord, client, logger, memory){
 			return;
 		}
 		
+		if(message.channel.id!=GAMECHANNEL){
+			return;
+		}
+
 		const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
 		const command = args.shift().toLowerCase();
 

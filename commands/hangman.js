@@ -1,7 +1,7 @@
 function Hangman(Discord, client, logger, memory){
 
 	const COMMAND = "hangman";
-	const GAMECHANNEL = "567351040186515456";
+	const GAMECHANNEL = "568459117417725970";
 	const TIME = 60;
 	const TIMEOUT = 30;
 
