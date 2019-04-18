@@ -1,7 +1,7 @@
 function ConnectFour(Discord, client, logger, memory){
 
 	const COMMAND = "connectfour";
-	const GAMECHANNEL = "567068929994784798";
+	const GAMECHANNEL = "568459117417725970";
 	const TIMEOUT = 60;
 
 	var game;
