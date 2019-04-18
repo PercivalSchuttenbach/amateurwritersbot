@@ -1,7 +1,9 @@
 function Hangman(Discord, client, logger, memory){
 
+	const COMMAND = "hangman";
 	const GAMECHANNEL = "567351040186515456";
 	const TIME = 60;
+	const TIMEOUT = 30;
 
 	var game;
 	var canjoin;
@@ -10,6 +12,7 @@ function Hangman(Discord, client, logger, memory){
 		var word;
 		var players = [];
 		var turns = [];
+		var tries = {};
 		var gameword;
 		var maskedword;
 		var guessed = "";
@@ -19,13 +22,50 @@ function Hangman(Discord, client, logger, memory){
 		var currentPlayer;
 		var words = ["awkward","bagpipes","banjo","bungler","croquet","crypt","dwarves","fervid","fishhook","fjord","gazebo","gypsy","haiku","haphazard","hyphen","ivory","jazzy","jiffy","jinx","jukebox","kayak","kiosk","klutz","memento","mystify","numbskull","ostracize","oxygen","pajama","phlegm","pixel","polka","quad","quip","rhythmic","rogue","sphinx","squawk","swivel","toady","twelfth","unzip","waxy","wildebeest","yacht","zealous","zigzag","zippy","zombie"];
 
+		var TurnTimer = new function(){
+			var timeout;
+			var timedout = 0;
+
+			function timer(){
+				clearTimeout(timeout);
+				timedout++;
+
+				if(timedout==players.length){
+					//all players timedout
+					game = false;
+					maskedword = gameword;
+					text = "All players unresponsive. Game over! :dizzy_face:";
+					UI.draw();
+				}else{
+					text = currentplayer + " is unresponsive. Turning to the next :upside_down:";
+					turn();
+					UI.draw();
+				}
+			}
+
+			this.start = function(){
+				timeout = setTimeout(timer, TIMEOUT * 1000);
+			};
+
+			this.stop = function(){
+				timedout = 0;
+				clearTimeout(timeout);
+			};
+		}
+
 		function start(){
 			canjoin = false;
 
 			if(!players.length){
 				game = false;
-				channel.send("No players joined the game. Sorry " + author + " i did like your word! :upside_down:");
-				return;
+				if(word){
+					channel.send("No players joined the game. Sorry " + author + " i did like your word! :upside_down:");
+					return;
+				}
+				else {
+					channel.send("No players. I guess I'll hang by myself then :upside_down:");
+					return;
+				}
 			}
 
 			if(!word){
@@ -43,16 +83,24 @@ function Hangman(Discord, client, logger, memory){
 		}
 
 		function turn(){
+			TurnTimer.stop();
 			if(!game){
 				//gameover no need to turn
 				return;
 			}
-			if(!turns.length){
-				turns = players.slice();
-			}
-			currentPlayer = turns.shift();
+			if(players.length){
+				if(!turns.length){
+					turns = players.slice();
+				}
+				currentPlayer = turns.shift();
 
-			text += "\n\nit's " + currentPlayer + "'s turn\nType a letter or guess the entire word.";
+				text += "\n\nit's " + currentPlayer + "'s turn. You have " + TIMEOUT + "sec\nType a letter or guess the entire word.\nor ~leave to stop.";
+
+				TurnTimer.start();
+			}else{
+				game = false;
+				text = "All players have left the game. Game over :dizzy_face:";
+			}
 		}
 
 		var UI = new function(){
@@ -84,11 +132,21 @@ function Hangman(Discord, client, logger, memory){
 				return display;
 			}
 
+			function getPlayersString(){
+				var display = "";
+				for(var i in players){
+					display += players[i].username + "\n";
+					display += (tries[ players[i].id ] ? tries[ players[i].id ] : "") + "\n";
+				}
+				return display;
+			}
+
 			this.draw = function(){
 				const embed = new Discord.RichEmbed();
 				embed.setTitle("Playing a game of Hangman");
 				embed.setDescription(text);
           		embed.setImage(getImage());
+          		embed.addField("players", getPlayersString());
           		embed.addField("Word", getWordEmojis(maskedword, true) );
           		embed.addField("Wrong", wrong ? getWordEmojis(wrong, false) : "n/a");
 
@@ -97,23 +155,32 @@ function Hangman(Discord, client, logger, memory){
 		};
 
 		this.takeGuess = function(guess){
+			guess = guess.toLowerCase();
+			if(guess.search(/[^a-z]/) > -1){
+				text = "Word or letter supplied is invalid. Please try again! :open_mouth:"
+				UI.draw();
+				return;
+			}
 			if(guess.length > 1){
 				//trying to guess whole word
 				if(gameword == guess){
 					//player guessed the word
 					text = currentPlayer + " you guessed it! :trophy:";
 					maskedword = guess;
+					setTry(true);
 					game = false;
 				}
 				else{
 					//wrong guess
 					attempts++;
+					setTry(false);
 					text = "You guessed wrong! try again! :thinking:";	
 				}
 			}else{
 				//geussing one letter
 				if(gameword.indexOf(guess) > -1){
 					guessed += guess;
+					setTry(true);
 
 					text = "**" + guess + "** is correct. keep going! :smiley:";
 					//the guess was correct
@@ -129,6 +196,7 @@ function Hangman(Discord, client, logger, memory){
 						//the guess was incorrect
 						wrong += guess;
 						attempts++;
+						setTry(false);
 
 						text = "**" + guess + "** is wrong. try again! :weary:";
 
@@ -136,6 +204,7 @@ function Hangman(Discord, client, logger, memory){
 						if(attempts == 6){
 							text = "game over! :dizzy_face:";
 							game = false;
+							maskedword = gameword;
 						}
 					}else{
 						text = "Letter has already been tried. Guess again! :smirk:";
@@ -144,6 +213,13 @@ function Hangman(Discord, client, logger, memory){
 			}
 			turn();
 			UI.draw();
+		}
+
+		function setTry(tried){
+			if(!tries[currentPlayer.id]){
+				tries[currentPlayer.id] = "";
+			}
+			tries[currentPlayer.id] += tried ? ":white_check_mark:" : ":x:";
 		}
 
 		this.join = function(user){
@@ -157,14 +233,32 @@ function Hangman(Discord, client, logger, memory){
 			channel.send(user + " has joined the game!");
 		};
 
+		this.leave = function(user){
+			players = players.filter(u=>u.id != user.id);
+			channel.send(user + " has left the game!");
+			if(currentPlayer.id == user.id){
+				logger.info("currentplayer has left");
+				turn();
+				UI.draw();
+			}
+		};
+
 		this.isAuthor = function(user){
 			return author.id == user.id;
 		};
 
 		this.setWord = function(chosenWord){
-			word = chosenWord;
+			if(chosenWord.toLowerCase().search(/[^a-z]/) ==- 1){
+				word = chosenWord.toLowerCase();
+				players = players.filter(u=>u.id!=author.id);
+				author.send("Your chosen word is: **" + chosenWord + "**\nenjoy watching the game.");
+			}else{
+				author.send("**" + chosenWord + "** contains unsupported characters. Give me a new one.");
+			}
+		};
 
-			players = players.filter(u=>u.id!=author.id);
+		this.hasWord = function(){
+			return word;
 		};
 
 		this.isCurrentPlayer = function(user){
@@ -174,7 +268,7 @@ function Hangman(Discord, client, logger, memory){
 		function run(){
 			canjoin = true;
 			players.push(author);
-			channel.send(author + " started a new game of hangman. The game will started in " + TIME + "sec.\n~join to join");
+			channel.send(author + " started a new game of hangman. The game will be started in " + TIME + "sec.\n" + author + " has auto joined\n~join to join or ~leave to leave (when you are already in game)");
 			author.send("You can supply me with a word that will be used in game.\nIf you do, you will not participate yourself.\nReply your chosen word within " + TIME + "sec or ignore.");
 			setTimeout(function(){
 				start();
@@ -190,8 +284,7 @@ function Hangman(Discord, client, logger, memory){
 			return;
 		}
 
-		if(canjoin && message.channel.type == "dm" && game.isAuthor(message.author)){
-			message.reply("Your chosen word is: **" + message.content + "**\nenjoy watching the game.");
+		if(canjoin && message.channel.type == "dm" && game.isAuthor(message.author) && !game.hasWord()){
 			game.setWord(message.content);
 		}
 
@@ -206,8 +299,12 @@ function Hangman(Discord, client, logger, memory){
 			game.join(message.author);
 			return;
 		}
-		if(game && command == 'hangman'){
+		if(game && command == COMMAND){
 			message.channel.send("game already in progress");
+			return;
+		}
+		if(game && (command == "leave" || command == "stop")){
+			game.leave(message.author);
 			return;
 		}
 		if(game){
@@ -218,7 +315,7 @@ function Hangman(Discord, client, logger, memory){
 			return;
 		}
 		
-		if(command == 'hangman'){
+		if(command == COMMAND){
             game = new Game(message.author, message.channel);
             return;
 		}
