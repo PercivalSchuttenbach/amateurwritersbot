@@ -112,7 +112,7 @@ function TicTacToe(Discord, client, logger, memory){
 			function awaitInput(){
 				const filter = (reaction, user) => {
 					//logger.info(user.toString() + " " + currentPlayer);
-				    return !user.bot && controls.includes(reaction.emoji.identifier) && user.toString()==currentPlayer;
+				    return !user.bot && controls.includes(reaction.emoji.identifier) && user.toString()==currentPlayer && steps==0;
 				};
 
 				botmessage.awaitReactions(filter, { max: 1, time: 60000, errors: ['time'] })
