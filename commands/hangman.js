@@ -292,7 +292,7 @@ function Hangman(Discord, client, logger, memory){
 			game.setWord(message.content);
 		}
 
-		if(message.channel.id!=GAMECHANNEL){
+		if(message.channel.id!=GAMECHANNEL || [COMMAND,"join","leave"].indexOf(command) == -1){
 			return;
 		}
 

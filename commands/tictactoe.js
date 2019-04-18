@@ -253,7 +253,7 @@ function TicTacToe(Discord, client, logger, memory){
 		switch(command){
 			case 'tictactoe':
             	//message.channel.send("command is setup properly").then((m)=>botmessage = m);
-            	var invited = message.mentions.members.first();
+            	var invited = message.mentions.users.first();
 
             	var test = new Game(message.author, invited, message.channel);
             break;
