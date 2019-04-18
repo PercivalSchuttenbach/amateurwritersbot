@@ -149,6 +149,7 @@ function Hangman(Discord, client, logger, memory){
           		embed.addField("players", getPlayersString());
           		embed.addField("Word", getWordEmojis(maskedword, true) );
           		embed.addField("Wrong", wrong ? getWordEmojis(wrong, false) : "n/a");
+          		embed.setFooter("Made by Percy");
 
 				channel.send(embed);
 			};
