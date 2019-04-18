@@ -263,6 +263,9 @@ function Hangman(Discord, client, logger, memory){
 		};
 
 		this.isCurrentPlayer = function(user){
+			if(!currentPlayer){
+				return false;
+			}
 			return currentPlayer.id == user.id;
 		};
 
