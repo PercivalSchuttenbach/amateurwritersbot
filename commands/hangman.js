@@ -288,6 +288,9 @@ function Hangman(Discord, client, logger, memory){
 			return;
 		}
 
+		const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
+		const command = args.shift().toLowerCase();
+
 		if(canjoin && message.channel.type == "dm" && game.isAuthor(message.author) && !game.hasWord()){
 			game.setWord(message.content);
 		}
@@ -295,9 +298,6 @@ function Hangman(Discord, client, logger, memory){
 		if(message.channel.id!=GAMECHANNEL || [COMMAND,"join","leave"].indexOf(command) == -1){
 			return;
 		}
-
-		const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
-		const command = args.shift().toLowerCase();
 
 		if(canjoin && command == "join"){
 			game.join(message.author);
