@@ -230,7 +230,7 @@ function TicTacToe(Discord, client, logger, memory){
 				})
 				.catch(collected => {
 				    //no input received, player has not made a move
-				    m.edit(player2 + " dit not respond.");
+				    m.edit(player2 + " did not respond.");
 				});
 			});
 		}

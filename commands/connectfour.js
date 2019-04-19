@@ -199,7 +199,7 @@ function ConnectFour(Discord, client, logger, memory){
 				.catch(collected => {
 				    //no input received, player has not made a move
 				    game = false;
-				    text = currentPlayer + " not responding and has forfeited.\n" + turns.shift() + " has won :trophy:";
+				    text = currentPlayer + " is not responding and has forfeited.\n" + turns.shift() + " has won :trophy:";
 				    UI.draw();
 				});
 			}
@@ -250,7 +250,7 @@ function ConnectFour(Discord, client, logger, memory){
 				})
 				.catch(collected => {
 				    //no input received, player has not made a move
-				    m.edit(player2 + " dit not respond.");
+				    m.edit(player2 + " did not respond.");
 				});
 			});
 		}

@@ -129,6 +129,15 @@ function Hangman(Discord, client, logger, memory){
 						display += ":hash:";
 					}
 				}
+
+				//add spaces
+				var s = 6-word.length;
+				if(s){
+					for(var i=0;i<s;i++){
+						display += ":black_large_square:";
+					}	
+				}
+
 				return display;
 			}
 
@@ -293,10 +302,6 @@ function Hangman(Discord, client, logger, memory){
 
 		if(canjoin && message.channel.type == "dm" && game.isAuthor(message.author) && !game.hasWord()){
 			game.setWord(message.content);
-		}
-
-		if(message.channel.id!=GAMECHANNEL || [COMMAND,"join","leave"].indexOf(command) == -1){
-			return;
 		}
 
 		if(canjoin && command == "join"){
