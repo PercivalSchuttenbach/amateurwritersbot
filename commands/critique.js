@@ -1,6 +1,7 @@
 var stcritique;
 
 function Critique(Discord, client, logger, memory){
+	const COMMAND = "critique";
 	const UPDATEAFTER = 60 * 60 * 1000;//1 hour
 	const CRITIQUED = "%F0%9F%92%AC";
 	const TOREAD = "%E2%8C%9B";
@@ -242,27 +243,37 @@ function Critique(Discord, client, logger, memory){
 			};
 
 			this.list = function(){
+				logger.info("Creating critique stats");
 				var message = "";
 				for(var writerId in writers){
+					logger.info("writerid: " + writerId);
+					logger.info(writers[writerId].getName());
 					var name;
 					var works = writers[writerId].getAll();
 					message += "** " + writers[writerId].getName() + " **\n";
 					for(var workId in works){
+						logger.info("getting work " + workId);
 						var work = works[workId];
+						logger.info(work.getName());
 						message+= "* " + work.getName() + " * ";
 						if(work.getReading(id)){
+							logger.info('get reading');
 							message+= ":eyeglasses:";
 						}
 						if(work.getCritique(id)){
+							logger.info('get critique');
 							message+= ":speech_balloon:";
 						}
 						if(work.getToread(id)){
+							logger.info('get toread');
 							message+= ":hourglass:";
 						}
 						message+= "\n";
 					}
 					message+="\n"
 				}
+
+
 
 				return message;
 			};
@@ -543,8 +554,19 @@ function Critique(Discord, client, logger, memory){
 		}
 
 		function showStats(){
-			var critiquer = CritiqueStore.get(message.author.id);
+			var critiquer = CritiqueStore.get(message.author.id);//
 			var list = critiquer.list();
+
+			if(list && list.length>2000){
+				var s = list.match(/(.|[\r\n]|:speech_balloon:|:hourglass:|:eyeglasses:){1,2000}/g);
+				botmessage.edit(message.author.toString() + " your stats:\n");
+				for(var i in s){
+					botmessage.channel.send(s[i]);
+				}
+				botmessage.channel.send("**Legend:**\n:hourglass:: to read.\n:eyeglasses:: currently reading.\n:speech_balloon:: critiqued.");
+				return;
+			}
+
 			if(!list){
 				list = "You have nothing in your critique listings at the moment. Click on :hourglass: :eyeglasses: :speech_balloon: underneath a message in the critique channels.";
 			}else{
@@ -1174,7 +1196,7 @@ function Critique(Discord, client, logger, memory){
 			const command = args.shift().toLowerCase();
 			const subcommand = args.shift();
 			
-			if(command=='critique'){
+			if(command==COMMAND){
 				switch(subcommand){
 					case "update":
 						update(message);
