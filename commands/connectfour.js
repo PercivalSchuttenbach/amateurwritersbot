@@ -12,6 +12,7 @@ function ConnectFour(Discord, client, logger, memory){
 		var text = "A new game of connect four";
 		var currentPlayer;
 		var botmessage;
+		var winner = false;
 
 		var board = [
 			/*0*/[0,0,0,0,0,0,0,0],
@@ -61,13 +62,9 @@ function ConnectFour(Discord, client, logger, memory){
 		       pboard += board[r].map(p=>p==cp?1:0).join('');
 		    }
 
-		    var h = pboard.search(/1{4}/) > -1;
-		    var v = pboard.search(/(1.{7}){3}1/) > -1;
-		    var dlr = pboard.search(/(1.{8}){3}1/) > -1;
-		    var drl = pboard.search(/(.{6}1){4}/) > -1;
-
-		    if(h || v || dlr || drl){
+		    if(pboard.search(/1{4}(1.{7}){3}1(1.{8}){3}1(.{6}1){4}/) > -1){
 		    	game = false;
+		    	winner = true;
 		    	text = currentPlayer + " has won!:trophy:";
 		    }else{
 		    	if(board[0].join('').search(/0/g)==-1){
@@ -115,39 +112,31 @@ function ConnectFour(Discord, client, logger, memory){
 			var steps = 0;
 			var controls = ["1%E2%83%A3","2%E2%83%A3","3%E2%83%A3","4%E2%83%A3","5%E2%83%A3","6%E2%83%A3","7%E2%83%A3","8%E2%83%A3"];
    			var numberMap = [":one:",":two:",":three:",":four:",":five:",":six:",":seven:",":eight:"];
-   			var icons = [':red_circle:',':large_blue_circle:'];
+   			var icons = [":black_large_square:",":red_circle:",':large_blue_circle:',":white_circle:"];
 
    			function drawBoard(){
-				var displayboard = [];
-
-				displayboard.push(
-				   board[0].join('')
-				   .replace(/0/g,function(m,o){return numberMap[o]})
-				   .replace(/1/g, icons[0])
-				   .replace(/2/g, icons[1])
-				);
-
+				var pboard = "";
 				for(var r in board){
-				    if(r==0){
-				        continue;
-				    }
-
-				    displayboard.push(
-				        board[r].join('')
-				        .replace(/0/g,':arrow_down:')
-				        .replace(/1/g, icons[0])
-				        .replace(/2/g, icons[1])
-				    );
+				   pboard += board[r].join('');
 				}
-				//:red_circle: :large_blue_circle: 
-				return displayboard.join("\n");
+
+				if(winner){
+					var cp = currentPlayer.id == player2.id ? 1 : 2;			
+					var rgx = new RegExp('1{4}|(1.{7}){3}1|(1.{8}){3}1|(.{6}1){4}'.replace(/1/g,cp));
+					pboard = pboard.replace(rgx,function(a,b,c,d){
+						return a.replace(new RegExp(cp,"g"),3);
+					});
+				}
+				pboard = pboard.replace(/./g,function(m,o,s){
+					return (o > 7 ? icons[m] : numberMap[o]) + (o!=s.length-1 ? !((o+1)%8) ? '\n' : '|' : '');
+				});
+				return pboard;
 		   }
 
 			function getPlayersString(){
 				var display = "";
-				for(var i in players){
-					logger.info();
-					display += icons[i] + " " + players[i].username + "\n";
+				for(var i=0;i<players.length;i++){
+					display += icons[i+1] + " " + players[i].username + "\n";
 				}
 				return display;
 			}
