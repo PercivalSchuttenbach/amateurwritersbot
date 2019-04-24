@@ -723,11 +723,17 @@ function Critique(Discord, client, logger, memory){
 			for(var i in works){
 				var work = works[i];
 				var cr = work.getCritique();
-				wlist['critiqued'][work.getName()] = cr;
+				if(cr.length){
+					wlist['critiqued'][work.getName()] = cr;
+				}
 				var rd = work.getReading();
-				wlist['reading'][work.getName()] = rd;
+				if(rd.length){
+					wlist['reading'][work.getName()] = rd;
+				}
 				var tr = work.getToread();
-				wlist['toread'][work.getName()] = tr;
+				if(tr.length){
+					wlist['toread'][work.getName()] = tr;
+				}
 
 				users = users.concat(cr, rd, tr);
 			}
@@ -745,6 +751,9 @@ function Critique(Discord, client, logger, memory){
 			for(var i in wlist){
 				text += "\n" + icons[i] + " **" + i + "**:\n";
 				var works = wlist[i];
+				if(!works.length){
+					text += "not available\n";
+				}
 				for(var w in works){
 					if(works[w].length){
 						text += "* " + w + "\n";
