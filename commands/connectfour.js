@@ -13,6 +13,7 @@ function ConnectFour(Discord, client, logger, memory){
 		var currentPlayer;
 		var botmessage;
 		var winner = false;
+		var winrgx ='1{4}|(1.{7}){3}1|(1.{8}){3}1|(.{6}1){4}';
 
 		var board = [
 			/*0*/[0,0,0,0,0,0,0,0],
@@ -62,7 +63,7 @@ function ConnectFour(Discord, client, logger, memory){
 		       pboard += board[r].map(p=>p==cp?1:0).join('');
 		    }
 
-		    if(pboard.search(/1{4}(1.{7}){3}1(1.{8}){3}1(.{6}1){4}/) > -1){
+		    if(pboard.search(new RegExp(winrgx)) > -1){
 		    	game = false;
 		    	winner = true;
 		    	text = currentPlayer + " has won!:trophy:";
@@ -122,7 +123,7 @@ function ConnectFour(Discord, client, logger, memory){
 
 				if(winner){
 					var cp = currentPlayer.id == player2.id ? 1 : 2;			
-					var rgx = new RegExp('1{4}|(1.{7}){3}1|(1.{8}){3}1|(.{6}1){4}'.replace(/1/g,cp));
+					var rgx = new RegExp(winrgx.replace(/1/g,cp));
 					pboard = pboard.replace(rgx,function(a,b,c,d){
 						return a.replace(new RegExp(cp,"g"),3);
 					});

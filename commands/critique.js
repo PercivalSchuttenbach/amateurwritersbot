@@ -244,6 +244,9 @@ function Critique(Discord, client, logger, memory){
 
 			this.list = function(){
 				logger.info("Creating critique stats");
+				var msgs = [];
+				var total = 0;
+
 				var message = "";
 				for(var writerId in writers){
 					logger.info("writerid: " + writerId);
@@ -271,11 +274,21 @@ function Critique(Discord, client, logger, memory){
 						message+= "\n";
 					}
 					message+="\n"
+
+					if(total + message.length > 2000){
+						msgs.push(message);
+						total = 0;
+						message = "";
+					}else{
+						total += message.length;
+					}
 				}
 
+				if(message.length){
+					msgs.push(message);
+				}
 
-
-				return message;
+				return msgs;
 			};
 		}
 
@@ -557,20 +570,19 @@ function Critique(Discord, client, logger, memory){
 			var critiquer = CritiqueStore.get(message.author.id);//
 			var list = critiquer.list();
 
-			if(list && list.length>2000){
-				var s = list.match(/(.|[\r\n]|:speech_balloon:|:hourglass:|:eyeglasses:){1,2000}/g);
+			if(list && list.length>1){
 				botmessage.edit(message.author.toString() + " your stats:\n");
-				for(var i in s){
-					botmessage.channel.send(s[i]);
+				for(var i in list){
+					botmessage.channel.send(list[i]);
 				}
 				botmessage.channel.send("**Legend:**\n:hourglass:: to read.\n:eyeglasses:: currently reading.\n:speech_balloon:: critiqued.");
 				return;
 			}
 
-			if(!list){
+			if(!list.length){
 				list = "You have nothing in your critique listings at the moment. Click on :hourglass: :eyeglasses: :speech_balloon: underneath a message in the critique channels.";
 			}else{
-				list = message.author.toString() + " your stats:\n" + list + "**Legend:**\n:hourglass:: to read.\n:eyeglasses:: currently reading.\n:speech_balloon:: critiqued.";
+				list = message.author.toString() + " your stats:\n" + list[0] + "**Legend:**\n:hourglass:: to read.\n:eyeglasses:: currently reading.\n:speech_balloon:: critiqued.";
 			}
 			botmessage.edit(list);
 		}
