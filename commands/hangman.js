@@ -20,7 +20,7 @@ function Hangman(Discord, client, logger, memory){
 		var attempts = 0;
 		var text = "A new game of hangman";
 		var currentPlayer;
-		var words = ["awkward","bagpipes","banjo","bungler","croquet","crypt","dwarves","fervid","fishhook","fjord","gazebo","gypsy","haiku","haphazard","hyphen","ivory","jazzy","jiffy","jinx","jukebox","kayak","kiosk","klutz","memento","mystify","numbskull","ostracize","oxygen","pajama","phlegm","pixel","polka","quad","quip","rhythmic","rogue","sphinx","squawk","swivel","toady","twelfth","unzip","waxy","wildebeest","yacht","zealous","zigzag","zippy","zombie"];
+		var words = ["GET BACK TO WRITING. Yes you where bound to lose this one. beep boop","marketing","publisher","agent","novel","book","story","butter","bread","thick","whatamidoingwithmylife","dadjoke","iamabotbeepboop","writing","write","author","description","dialogue","palindrome","boring","thekingsgame","theoracle","bloodfromastone","blackknight","spidermonkey","ooulthululu","cat","shouldntyoubewriting","procrastination","arc","character","paragraph","plot","idiom","macguffin","foreshadowing","chekhov","draft","prose","aesthetics","heterodiegetic","homodiegetic","omniscient","narrator","narrative","protagonist","antagonist","awkward","bagpipes","banjo","bungler","croquet","crypt","dwarves","fervid","fishhook","fjord","gazebo","gypsy","haiku","haphazard","hyphen","ivory","jazzy","jiffy","jinx","jukebox","kayak","kiosk","klutz","memento","mystify","numbskull","ostracize","oxygen","pajama","phlegm","pixel","polka","quad","quip","rhythmic","rogue","sphinx","squawk","swivel","toady","twelfth","unzip","waxy","wildebeest","yacht","zealous","zigzag","zippy","zombie"];
 
 		var TurnTimer = new function(){
 			var timeout;
