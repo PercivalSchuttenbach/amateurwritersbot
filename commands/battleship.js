@@ -1485,6 +1485,8 @@ function Battleship(Discord, client, logger, memory){
                 endGame(winner, loser.getBoard(), 'You won! :trophy:');
                 endGame(loser, winner.getBoard(), 'You lost! :skull_crossbones:');
 
+                Spectator.updateBoards();
+
                 //stop game
                 game.splice(gkey,1);
 
