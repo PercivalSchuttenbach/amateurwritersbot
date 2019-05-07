@@ -65,6 +65,9 @@ if(client.commands.hangman){
 if(client.commands.connectfour){
     client.commands.connectfour.init(Discord, client, logger, memory);
 }
+if(client.commands.battleship){
+    client.commands.battleship.init(Discord, client, logger, memory);
+}
 
 //Make sure all mesages are checked
 client.on('raw', packet => {
