@@ -17,7 +17,7 @@ function Fun(Discord, client, logger, memory){
             break;
             case 'motivated':
 	            var image = "https://cdn.discordapp.com/attachments/522773675263655983/567039672648204308/gzfy1bez4t311_1.png";
-	            if(message.author.username=="Ouul"){
+	            if(message.author.username=="Ouul"||message.author.username=="Ouulette"){
 	            	image = "https://media.discordapp.net/attachments/522773675263655983/564112585620979712/OuulMotivated2.png";
 	            }
 	            embed.setImage(image);
