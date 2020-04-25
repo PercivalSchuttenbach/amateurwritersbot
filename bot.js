@@ -76,7 +76,7 @@ client.on("message", message => {
 
 client.on('ready', ()=>{
     //set Status for bot
-    client.user.setPresence({ activity: { name: 'OG: ~help' }, status: 'online' })
+    client.user.setActivity('OG: ~help', { type: 'WATCHING' });
 });
 
 client.login();
