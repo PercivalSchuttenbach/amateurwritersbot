@@ -254,8 +254,12 @@ function TicTacToe(Discord, client, logger, memory){
 			case 'tictactoe':
             	//message.channel.send("command is setup properly").then((m)=>botmessage = m);
             	var invited = message.mentions.users.first();
-
-            	var test = new Game(message.author, invited, message.channel);
+            	if(invited){
+            		var test = new Game(message.author, invited, message.channel);
+            	}else
+            	{
+            		channel.send('Must invite a user to play ~tictactoe @[player2]');
+            	}
             break;
 		}
 	});
