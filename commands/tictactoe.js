@@ -258,7 +258,7 @@ function TicTacToe(Discord, client, logger, memory){
             		var test = new Game(message.author, invited, message.channel);
             	}else
             	{
-            		channel.send('Must invite a user to play ~tictactoe @[player2]');
+            		message.channel.send('Must invite a user to play ~tictactoe @[player2]');
             	}
             break;
 		}
