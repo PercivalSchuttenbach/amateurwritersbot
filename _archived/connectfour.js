@@ -1,12 +1,13 @@
 function ConnectFour(Discord, client, logger, memory){
 
-	const COMMAND = "connectfour";
-	const GAMECHANNEL = "568459117417725970";
+	const COMMAND = "connectfour1";
+	const GAMECHANNEL = "567068929994784798";//"568459117417725970";
 	const TIMEOUT = 60;
 
 	var game;
 
 	function Game(player1, player2, channel){
+		var bot;
 		var players = [];
 		var turns = [];
 		var text = "A new game of connect four";
@@ -55,6 +56,29 @@ function ConnectFour(Discord, client, logger, memory){
 			};
 		}
 
+		function Bot(){
+			var watch = [];
+
+			function checkPlayerStrategy(){
+				//1{4}|(1.{7}){3}1|(1.{8}){3}1|(.{6}1){4}
+
+				var strategies = new RegExp('(?=((.{6}[02]){3}2)|(2(.{6}[02]){3})|(([02]{8}){3}2)|(2([02]{8}){3})(([02].{7}){3}2)|(2([02].{7}){3})|([02]{3}2)|(2[02]{3})(([02].{7}){3}2)|(2([02].{7}){3})|([02]{3}2)|(2[02]{3}))','g');
+				var pboard = '';
+
+				for(var r in board){
+			       pboard += board[r].join('');
+			    }
+
+			    console.log(pboard);
+			    console.log(pboard.match(strategies));
+			}
+
+			this.drop = function(){
+				console.log('bot drops');
+				checkPlayerStrategy();
+			}
+		}
+
 		function checkWinner(){
 		    var pboard = "";
 		    var cp = currentPlayer.id == player2.id ? 1 : 2;
@@ -83,6 +107,10 @@ function ConnectFour(Discord, client, logger, memory){
 			players.push(player2);
 			players.push(player1);
 
+			if(player2.bot){
+				players.reverse();
+			}
+
 			turn();
 			UI.draw();
 		}
@@ -101,6 +129,11 @@ function ConnectFour(Discord, client, logger, memory){
 				currentPlayer = turns.shift();
 
 				text = "it's " + currentPlayer + "'s turn.";
+
+				if(currentPlayer.bot){
+					console.log('current player is the bot');
+					bot.drop();
+				}
 
 				//TurnTimer.start();
 			}else{
@@ -245,7 +278,15 @@ function ConnectFour(Discord, client, logger, memory){
 			});
 		}
 
-		invite();
+		if(!player2.bot){
+			invite();
+		}else{
+			bot = new Bot();
+			channel.send('Starting up the game').then((m)=>{
+				botmessage=m;
+				start();
+			});
+		}
 		//start();
 
 	}

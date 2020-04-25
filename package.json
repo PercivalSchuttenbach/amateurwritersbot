@@ -5,7 +5,7 @@
 	"main": "bot.js",
 	"author": "Glenn Glerum",
 	"dependencies": {
-		"discord.js": "^11.4.2",
+		"discord.js": "^11.6.4",
 		"dotenv": "^7.0.0",
 		"winston": "^3.2.1"
 	},
