@@ -1,7 +1,7 @@
 function Hangman(Discord, client, logger, memory){
 
 	const COMMAND = "hangman";
-	const GAMECHANNEL = "568459117417725970";
+	const GAMECHANNEL = "703652356566548591";
 	const TIME = 60;
 	const TIMEOUT = 30;
 
@@ -294,6 +294,9 @@ function Hangman(Discord, client, logger, memory){
 
 	client.on("message", message => {
 		if(message.author.bot){
+			return;
+		}
+		if(message.channel.id!=GAMECHANNEL){
 			return;
 		}
 

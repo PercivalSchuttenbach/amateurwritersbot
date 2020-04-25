@@ -1,6 +1,6 @@
 function TicTacToe(Discord, client, logger, memory){
 
-	const GAMECHANNEL = "568459117417725970";
+	const GAMECHANNEL = "703652356566548591";
 
 	function Game(player1, player2, channel){
 		var displaytext;
