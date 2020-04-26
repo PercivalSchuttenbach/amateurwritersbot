@@ -1,7 +1,7 @@
 function ConnectFour(Discord, client, logger, memory){
 
-	const COMMAND = "connectfour1";
-	const GAMECHANNEL = "567068929994784798";//"568459117417725970";
+	const COMMAND = "connectfour";
+	const GAMECHANNEL = "652184396819857448";//"568459117417725970";
 	const TIMEOUT = 60;
 
 	var game;
@@ -146,7 +146,7 @@ function ConnectFour(Discord, client, logger, memory){
 			var steps = 0;
 			var controls = ["1%E2%83%A3","2%E2%83%A3","3%E2%83%A3","4%E2%83%A3","5%E2%83%A3","6%E2%83%A3","7%E2%83%A3","8%E2%83%A3"];
    			var numberMap = [":one:",":two:",":three:",":four:",":five:",":six:",":seven:",":eight:"];
-   			var icons = [":black_large_square:",":red_circle:",':large_blue_circle:',":white_circle:"];
+   			var icons = ["⬛","🔴",'🔵',"⚪"];
 
    			function drawBoard(){
 				var pboard = "";

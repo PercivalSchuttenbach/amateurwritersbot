@@ -1,6 +1,7 @@
 function TicTacToe(Discord, client, logger, memory){
-
-	const GAMECHANNEL = "703652356566548591";
+	this.name = 'tictactoe';
+	this.description = 'TicTacToe';
+	this.command = ['tictactoe1'];
 
 	function Game(player1, player2, channel){
 		var displaytext;
@@ -238,37 +239,27 @@ function TicTacToe(Discord, client, logger, memory){
 		invite();
 	}
 
-	client.on("message", message => {
-		if(message.author.bot){
-			return;
-		}
-		
-		if(message.channel.id!=GAMECHANNEL){
-			return;
-		}
+	this.run = function(message){
+		console.log('run tictactoe1');
+		var invited = message.mentions.users.first();
+    	if(invited){
+    		var test = new Game(message.author, invited, message.channel);
+    	}else
+    	{
+    		message.channel.send('Must invite a user to play ~tictactoe @[player2]');
+    	}
+	};
 
-		const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
-		const command = args.shift().toLowerCase();
+	// client.on("message", message => {
+	// 	const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
+	// 	const command = args.shift().toLowerCase();
 
-		switch(command){
-			case 'tictactoe':
-            	//message.channel.send("command is setup properly").then((m)=>botmessage = m);
-            	var invited = message.mentions.users.first();
-            	if(invited){
-            		var test = new Game(message.author, invited, message.channel);
-            	}else
-            	{
-            		message.channel.send('Must invite a user to play ~tictactoe @[player2]');
-            	}
-            break;
-		}
-	});
+	// 	switch(command){
+	// 		case 'tictactoe1':
+ //            	
+ //            break;
+	// 	}
+	// });
 }
 
-module.exports = {
-  name: 'tictactoe',
-  description: 'tictactoe',
-  init(Discord, client, logger, memory){
-    tictactoe = new TicTacToe(Discord, client, logger, memory);
-  }
-};
+module.exports = TicTacToe;
