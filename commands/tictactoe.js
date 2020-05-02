@@ -1,8 +1,4 @@
-function TicTacToe(Discord, client, logger, memory){
-	this.name = 'tictactoe';
-	this.description = 'TicTacToe';
-	this.command = ['tictactoe1'];
-
+function TicTacToe({Discord}){
 	function Game(player1, player2, channel){
 		var displaytext;
 		var botmessage;
@@ -39,8 +35,6 @@ function TicTacToe(Discord, client, logger, memory){
 			var gametemplate = ":one: | :two: | :three:\n\n:four: | :five: | :six:\n\n:seven: | :eight: | :nine:\n\n";
 
 			this.new = function(){
-				logger.info("new game");
-
 				title = "Tic Tac Toe\n" + players[1] + " " + icons[1] + " vs " + players[2] + " " + icons[2] + "\n\n";
 				//start a fresh game
 				game = gametemplate;
@@ -112,7 +106,6 @@ function TicTacToe(Discord, client, logger, memory){
 
 			function awaitInput(){
 				const filter = (reaction, user) => {
-					//logger.info(user.toString() + " " + currentPlayer);
 				    return !user.bot && controls.includes(reaction.emoji.identifier) && user.toString()==currentPlayer && steps==0;
 				};
 
@@ -128,20 +121,14 @@ function TicTacToe(Discord, client, logger, memory){
 				})
 				.catch(collected => {
 				    //no input received, player has not made a move
-				    logger.info("A booboo?");
 				});
 			}
 
 		};
 
 		function start(){
-			logger.info("game started");
-
 			players.push(player2.toString());
 			players.push(player1.toString());
-
-			logger.info("players assigned");
-
 			currentPlayer = player2.toString();
 
 			UI.new();
@@ -164,7 +151,6 @@ function TicTacToe(Discord, client, logger, memory){
 		}
 
 		function compareToWinTable(pmoves){
-			logger.info("run compare function");
 
 			for(var t in wintable){
 				var table = wintable[t];
@@ -178,8 +164,6 @@ function TicTacToe(Discord, client, logger, memory){
 					return true;
 				}
 			}
-
-			logger.info("no win match found");
 
 			return false;
 		}
@@ -220,7 +204,6 @@ function TicTacToe(Discord, client, logger, memory){
 
 				    if(emoji=="%E2%9C%85"){
 				    	//yes
-				    	logger.info("game accepted");
 				    	start();
 				    }
 				    else{
@@ -239,7 +222,7 @@ function TicTacToe(Discord, client, logger, memory){
 		invite();
 	}
 
-	this.run = function(message){
+	this.tictactoe = function(message){
 		console.log('run tictactoe1');
 		var invited = message.mentions.users.first();
     	if(invited){
@@ -249,17 +232,17 @@ function TicTacToe(Discord, client, logger, memory){
     		message.channel.send('Must invite a user to play ~tictactoe @[player2]');
     	}
 	};
-
-	// client.on("message", message => {
-	// 	const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
-	// 	const command = args.shift().toLowerCase();
-
-	// 	switch(command){
-	// 		case 'tictactoe1':
- //            	
- //            break;
-	// 	}
-	// });
 }
 
-module.exports = TicTacToe;
+module.exports = {
+  name: 'TicTacToe',
+  description: 'TicTacToe',
+  validate: function({author})
+  {
+  	return !author.bot;
+  },
+  init: function(resources)
+  {
+  	return new TicTacToe(resources);
+  }
+};

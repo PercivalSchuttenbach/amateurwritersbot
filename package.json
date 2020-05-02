@@ -1,17 +1,19 @@
 {
 	"name": "amateur-writers-bot",
 	"version": "1.0.0",
-	"description": "The bot for the amateur's writer group",
+	"description": "The bot for the Book or Bust",
 	"main": "bot.js",
 	"author": "Glenn Glerum",
 	"dependencies": {
-		"discord.js": "^11.6.4",
-		"dotenv": "^7.0.0",
-		"winston": "^3.2.1"
+		"discord.js": "^12.2.0",
+		"dotenv": "^8.2.0",
+		"googleapis": "^39.2.0",
+		"winston": "^3.2.1",
+		"readline-sync": "^1.4.10"
 	},
 	"engines": {
-		"node": "10.15.3",
-		"npm": "6.4.1"
+		"node": "14.0.0",
+		"npm": "6.14.4"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",

@@ -292,14 +292,8 @@ function Hangman(Discord, client, logger, memory){
 
 	}
 
-	client.on("message", message => {
-		if(message.author.bot){
-			return;
-		}
-		if(message.channel.id!=GAMECHANNEL){
-			return;
-		}
-
+	this.hangman = function(message)
+	{
 		const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
 		const command = args.shift().toLowerCase();
 
@@ -331,13 +325,17 @@ function Hangman(Discord, client, logger, memory){
             game = new Game(message.author, message.channel);
             return;
 		}
-	});
+	}
 }
 
 module.exports = {
   name: 'hangman',
   description: 'hangman',
+  validate: function({author, channel})
+  {
+  	return !author.bot && channel.id==process.env.CHANNEL_GAME;
+  },
   init(Discord, client, logger, memory){
-    tictactoe = new Hangman(Discord, client, logger, memory);
+    return new Hangman(Discord, client, logger, memory);
   }
 };
