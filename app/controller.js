@@ -9,6 +9,8 @@ class Controller {
 		this.commands = require('../app/commands');
 		this.prefix = process.env.PREFIX;
 		this.models = [];
+		this.listeners = [];
+		this.resources = null;
 	}
 
 	/**
@@ -26,7 +28,7 @@ class Controller {
 	validate({content, channel})
 	{
 		//commpand prefix needs to be in message; if debug enabled we need to be in debug channel
- 		return content.indexOf(this.prefix) == 0 && (!process.env.DEBUG || process.env.CHANNEL_DEBUG == channel.id);
+ 		return content.indexOf(this.prefix) == 0 && (!parseInt(process.env.DEBUG) || process.env.CHANNEL_DEBUG == channel.id);
 	}
 
 	/**
@@ -46,6 +48,8 @@ class Controller {
 	*/
 	handle(message)
 	{
+		this.listen(message);
+
 		if(!this.validate(message)) return;
 
 		let {command, args} = this.getArgs(message);
@@ -53,12 +57,52 @@ class Controller {
 		if(!this.models[command])
 		{
 			let commandModel = this.getModel(command);
-			if(commandModel && commandModel.validate(message))
+			if(!commandModel || !commandModel.validate(message))
 			{
-				this.models[command] = commandModel.init({...this.resources, message});
+				return;
 			}
+			this.models[command] = commandModel.init({...this.resources, message, Controller: this});
 		}
 		this.models[command][command](message);
+	}
+
+	/**
+	* @param Discord.message
+	*/
+	listen(message)
+	{	
+		let {content, channel, author} = message;
+		//do not listen to self
+		if(author.id == this.resources.Client.user.id){
+			return;
+		}
+		//loop through listeners
+		this.listeners.forEach(({phrase, channelId, bot, callback})=>{
+			if(channelId == channel.id && author.bot == bot && content.search(phrase) > -1)
+			{
+				callback(message);
+				return;
+			}
+		});
+	}
+
+	/**
+	* @param string
+	* @param Fn
+	*/
+	listenTo(phrase, channelId, bot, callback)
+	{
+		const listenerId = this.listeners.length;
+		this.listeners.push({id: listenerId, phrase, channelId, bot, callback});
+		return listenerId;
+	}
+
+	/**
+	* @param string
+	*/
+	stopListeningTo(listenerId)
+	{
+		this.listeners = this.listeners.filter(({id})=>id!=listenerId);
 	}
 
 	/**
