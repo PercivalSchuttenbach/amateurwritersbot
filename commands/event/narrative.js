@@ -7,6 +7,7 @@ class Narrative {
 		this.wordcount = parseInt(row[2]);
 		this.image = row[3];
 		this.shown = parseInt(row[4]);
+		this.icon = row[5];
 	}
 
 	/**
@@ -31,7 +32,8 @@ class Narrative {
 			this.text,
 			this.wordcount,
 			this.image,
-			this.shown
+			this.shown,
+			this.icon
 		];
 	}
 

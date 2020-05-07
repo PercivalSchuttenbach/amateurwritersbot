@@ -12,6 +12,7 @@ class Sprinter {
 		/* 1 is use wordcount. 2 is use minutes*/
 		this.type = data[4] ? parseInt(data[4]) : 1;
 		this.sprintWc = 0;
+		this.startWc = 0;
 	}
 
 	/**
@@ -22,11 +23,20 @@ class Sprinter {
 	}
 
 	/**
+	 * @param {any} wc
+	 */
+	setSprintStartWc(wc)
+	{
+		this.startWc = wc == 'same' ? this.startWc : parseInt(wc);
+    }
+
+	/**
 	* @param string|int
 	**/
 	setSprintWc(wordcount)
 	{
-		let wc = parseInt(wordcount);
+		let wc = parseInt(wordcount) - this.startWc;
+		this.startWc += wc;
 		this.sprintWc = this.type == 1 ? wc : (wc * MULTIPLIER);
 	}
 

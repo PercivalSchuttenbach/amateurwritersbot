@@ -1,6 +1,4 @@
 require('dotenv').config();
-const memwatch = require('memwatch-next');
-memwatch.on('leak', function(info) { console.error(info); });
 
 console.log(process.version);
 
