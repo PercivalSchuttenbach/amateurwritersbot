@@ -4,18 +4,21 @@ const Enemy = require('./event/enemy');
 const Sprinter = require('./event/sprinter');
 const Narrative = require('./event/narrative');
 
+const MOD_ROLE_ID = 635960624702029824;
+const IS_MOD = ({ member }) => member.roles.highest.id == MOD_ROLE_ID;
+
 /** @var array **/
 const SUB_COMMANDS = {
-    'set': true,
-    'start': true,
-    'stop': true,
-    'dungeon': true,
-    'type': true,
-    'test': true,
-    'reload': true,
-    'help': true,
-    'narrate': true,
-    'banter': true
+    'set': IS_MOD,
+    'start': () => true,
+    'stop': () => true,
+    'dungeon': () => true,
+    'type': () => true,
+    'test': IS_MOD,
+    'reload': IS_MOD,
+    'help': () => true,
+    'narrate': IS_MOD,
+    'banter': IS_MOD
 };
 
 const DUNGEONS = {
@@ -79,6 +82,8 @@ class Event
         this.channel = null;
         /** @var Channel **/
         this.sprintChannel = null;
+        /* @var Webhook */
+        this.webhook = null;
         /** bot Message **/
         this.botMessage = null;
         /** @var string **/
@@ -198,8 +203,6 @@ class Event
         return { command, args };
     }
 
-
-
     /**
     * Command function called from controller
     *
@@ -213,7 +216,11 @@ class Event
         let { command, args } = this.getArgs(message);
         //@todo make sure not all methods can be called from chat
         if (!SUB_COMMANDS[command]) {
-            this.sendFeedbackToChannel('No valid subcommand given. Use "~event help"', true);
+            this.sendFeedbackToChannel('No valid subcommand given. Use "~event help".', true);
+            return;
+        }
+        if (!SUB_COMMANDS[command](message)) {
+            this.sendFeedbackToChannel('No permission to use this command.', true);
             return;
         }
         //execute subcommand method. On error catch and send to channel
@@ -256,6 +263,9 @@ class Event
             return;
         }
         this.sprintChannel = this.channel;
+        await this.sprintChannel.createWebhook(this.Client.user.username, {
+            avatar: this.Client.user.avatarURL(),
+        }).then(webhook => {this.webhook = webhook;}).catch(console.error);
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
         //Bind listeners for event
@@ -346,8 +356,10 @@ class Event
         const match = content.match(/(\d+|same)/);
         const wc = match ? match[0] : 0;
 
-        let sprinter = this.getSprinter(author);
+        let { sprinter, joined } = this.getSprinter(author);
         sprinter.setSprintStartWc(wc);
+
+        if(joined) this.joinedTheFray(author, sprinter);
     }
 
     /**
@@ -390,7 +402,7 @@ class Event
         const match = content.match(/(\d+)\s?(new)?/);
         if (match) {
             const [, wordcount, newFlag] = match;
-            let sprinter = this.getSprinter(author);
+            let { sprinter } = this.getSprinter(author);
             sprinter.setSprintWc(wordcount, newFlag);
         }
     }
@@ -443,6 +455,8 @@ class Event
     showBegin()
     {
         this.showNarrative(this.eventData.narratives[0]);
+        this.showEnemies();
+        this.showSprinters();
     }
 
 
@@ -493,6 +507,7 @@ class Event
         if (currentEnemy) {
             currentEnemy.takeDamage(wordcount);
             this.showEnemy(currentEnemy, true);
+            if (currentEnemy.defeated) this.showEnemies();
             return;
         }
         throw `Event had already ended`;
@@ -531,7 +546,7 @@ class Event
         if (!args.length || !["m", "wc"].includes(args[0])) {
             throw `No type supplied "~event type *m* **or** *wc*" m for minutes or wc for wordcount`;
         }
-        let sprinter = this.getSprinter(message.author);
+        let { sprinter } = this.getSprinter(message.author);
         sprinter.setType(args[0]);
         this.sendFeedbackToChannel(`Your sprint type has been set to ${args[0] === 'm' ? 'minutes' : 'wordcount'}`, true);
     }
@@ -542,17 +557,22 @@ class Event
     getSprinter(author)
     {
         let sprinter = this.eventData.sprinters.find(({ id }) => id === author.id);
+        let joined = false;
         if (!sprinter) {
             //Sprinter is not in eventData yet. Add it
+            const member = this.channel.members.get(author.id);
             sprinter = new Sprinter([
                 author.id,
-                author.username,
+                member.displayName,
                 0,
-                this.getRandomIcon()
+                this.getRandomIcon(),
+                1,
+                member.user.avatarURL()
             ])
             this.eventData.sprinters.push(sprinter);
+            joined = true;
         }
-        return sprinter;
+        return { sprinter, joined };
     }
 
     /**
@@ -708,7 +728,15 @@ class Event
         //if data is available add it to eventData
         const rows = response.data.values;
         if (rows !== undefined && rows.length) {
-            this.eventData[label] = rows.map((row) => new Type(row));
+            this.eventData[label] = rows.map((row) =>
+            {
+                if (label === 'sprinters') {
+                    const member = this.channel.members.get(row[0]);
+                    row[1] = member.displayName;
+                    row.push(member.user.avatarURL());
+                }
+                return new Type(row);
+            });
             //await this.sendFeedbackToChannel(`Retrieved ${label}.`);
         }
         return;
@@ -775,6 +803,28 @@ class Event
         this.sprintChannel.send(embed);
     }
 
+    /**
+     * Show list of enemies still needed to beat
+     * */
+    showEnemies()
+    {
+        const embeds = this.eventData.enemies.map(({ name, health, wordcount, healthbar, thumbnail }, key, enemies) =>
+        {
+            if ((key > 0 && !enemies[key - 1].defeated) || health === wordcount) {
+                thumbnail = null;
+                name = name.replace(/./gi, '?');
+                health = `${health}`.replace(/[0-9]/gi, '?');
+                wordcount = `${wordcount}`.replace(/[0-9]/gi,'?');
+            }
+
+            return new this.Discord.MessageEmbed()
+                .setAuthor(name, thumbnail)
+                .addField('Health', healthbar, true)
+                .addField('Wordcount', `${health}/${wordcount}`, true);
+        });
+        this.webhook.send("Enemies:", embeds);
+    }
+
 
     /**
     * @param Narrative
@@ -800,10 +850,12 @@ class Event
     {
         const sprinters = this.eventData.sprinters;
         if (sprinters.length) {
-            const embed = new this.Discord.MessageEmbed().setTitle("Our heroes:");
-
-            sprinters.forEach(({ name, wordcount, icon }) => embed.addField(`${name} ${icon}`, `Written: ${wordcount}`, sprinters.length > 1));
-            this.sprintChannel.send(embed);
+            const embeds = sprinters.map(({ name, wordcount, icon, thumbnail }) =>
+            {
+                return new this.Discord.MessageEmbed().setAuthor(`${name} ${icon}`, thumbnail)
+                    .setDescription(`Written: ${wordcount}`);
+            });
+            this.webhook.send("Our heroes:", embeds);
         }
     }
 
@@ -838,6 +890,19 @@ class Event
             .setDescription(content)
             .setTitle(name)
             .setThumbnail(thumbnail);
+        this.sprintChannel.send(embed);
+    }
+
+    /**
+     * Show who has joined the party
+     *
+     * @param {any} author
+     */
+    joinedTheFray(author, sprinter)
+    {
+        const embed = new this.Discord.MessageEmbed()
+            .setAuthor(`${sprinter.name} ${sprinter.icon}`, author.avatarURL())
+            .setDescription('Has joined the fray! ⚔️');
         this.sprintChannel.send(embed);
     }
 

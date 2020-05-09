@@ -3,7 +3,7 @@ const MULTIPLIER = 15;
 
 class Sprinter {
 
-	constructor(data)
+	constructor(data, members)
 	{
 		this.id = data[0]
 		this.name = data[1];
@@ -14,6 +14,7 @@ class Sprinter {
 		this.sprintWc = 0;
 		this.startWc = 0;
 		this.joined = false;
+		this.thumbnail = data[5];
 	}
 
 	/**
