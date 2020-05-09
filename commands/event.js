@@ -82,8 +82,6 @@ class Event
         this.channel = null;
         /** @var Channel **/
         this.sprintChannel = null;
-        /* @var Webhook */
-        this.webhook = null;
         /** bot Message **/
         this.botMessage = null;
         /** @var string **/
@@ -263,9 +261,6 @@ class Event
             return;
         }
         this.sprintChannel = this.channel;
-        await this.sprintChannel.createWebhook(this.Client.user.username, {
-            avatar: this.Client.user.avatarURL(),
-        }).then(webhook => {this.webhook = webhook;}).catch(console.error);
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
         //Bind listeners for event
@@ -486,6 +481,8 @@ class Event
         await this.updateResource('sprinters', DATA_RANGES.sprinters, sprintersData);
         await this.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
         await this.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
+
+        //this.Controller.takeSnapshot();
     }
 
     /**
@@ -822,7 +819,7 @@ class Event
                 .addField('Health', healthbar, true)
                 .addField('Wordcount', `${health}/${wordcount}`, true);
         });
-        this.webhook.send("Enemies:", embeds);
+        this.sprintChannel.send('Enemies:').then(()=>this.loopSendEmbeds(embeds));
     }
 
 
@@ -850,13 +847,27 @@ class Event
     {
         const sprinters = this.eventData.sprinters;
         if (sprinters.length) {
-            const embeds = sprinters.map(({ name, wordcount, icon, thumbnail }) =>
+            let embeds = sprinters.map(({ name, wordcount, icon, thumbnail }) =>
             {
                 return new this.Discord.MessageEmbed().setAuthor(`${name} ${icon}`, thumbnail)
                     .setDescription(`Written: ${wordcount}`);
             });
-            this.webhook.send("Our heroes:", embeds);
+            this.sprintChannel.send('Our heroes:').then(()=>this.loopSendEmbeds(embeds));
         }
+
+    }
+
+    /**
+     * Send embeds in order
+     * 
+     * @param array embeds
+     */
+    loopSendEmbeds(embeds)
+    {
+        this.sprintChannel.send(embeds.shift()).then(() =>
+        {
+            if (embeds.length) this.loopSendEmbeds(embeds);
+        });
     }
 
     /**

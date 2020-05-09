@@ -1,3 +1,5 @@
+const SNAPSHOT_KEYS = ['models','listeners'];
+
 /**
 * Controller determines to with file the command is delegated
 */
@@ -113,6 +115,15 @@ class Controller {
 	{
 		return this.commands.find(com=>com.commands.indexOf(command) > -1);
 	}
+
+	/**
+	 * Take a snap shot of Objects currently loaded in memory and save to file
+	 */
+	takeSnapshot()
+	{
+		let snapshot = JSON.stringify(SNAPSHOT_KEYS.map(key => this[key]));
+		console.log(snapshot);
+    }
 
 	/**
 	* @param string command

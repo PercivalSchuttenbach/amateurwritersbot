@@ -1,9 +1,10 @@
 {
   "ExpandedNodes": [
     "",
+    "\\app",
     "\\commands",
     "\\commands\\event"
   ],
-  "SelectedNode": "\\commands\\fun.js",
+  "SelectedNode": "\\bot.js",
   "PreviewInSolutionExplorer": false
 }
