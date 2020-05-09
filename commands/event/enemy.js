@@ -19,7 +19,7 @@ class Enemy {
 		this.thumbnail = row[5]
 		this.defeatedText = row[6];
 		this.healthbar = '';
-		this.defeated = this.health == 0;
+		this.defeated = this.health === 0;
 		this.setHealthbar();
 	}
 
@@ -70,7 +70,7 @@ class Enemy {
 	* Get percentage of health left
 	*/
 	getHealthLeft(){
-		return this.health / this.wordcount * healthbarLength;
+		return (this.health / this.wordcount) * healthbarLength;
 	}
 
 	/**
@@ -79,15 +79,16 @@ class Enemy {
 	getBattleText()
 	{
 		const healthLeft = this.getHealthLeft();
+
 		let text = "Is nearly defeated! Almost there!";
-		if(healthLeft >= 9){
-			text = "Acts like they did not feel anything...";
-		}
-		if(healthLeft >= 5){
-			text = "Is starting to feel it. But is still coming!";
-		}
 		if(healthLeft >= 1){
 			text = "Has had enough and is trying to get away!";
+		}
+		if (healthLeft >= 5) {
+			text = "Is starting to feel it. But is still coming!";
+		}
+		if (healthLeft >= 9) {
+			text = "Acts like they did not feel anything...";
 		}
 		return text;
 	}

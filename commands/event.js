@@ -13,7 +13,9 @@ const SUB_COMMANDS = {
     'type': true,
     'test': true,
     'reload': true,
-    'help': true
+    'help': true,
+    'narrate': true,
+    'banter': true
 };
 
 const DUNGEONS = {
@@ -75,6 +77,8 @@ class Event
         this.sheets = null;
         /** @var Channel **/
         this.channel = null;
+        /** @var Channel **/
+        this.sprintChannel = null;
         /** bot Message **/
         this.botMessage = null;
         /** @var string **/
@@ -230,7 +234,7 @@ class Event
             .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.')
             .addField('~event set [spreadsheet_id]', 'Using this method you can tell the bot to run a spreadsheet not available in the dungeon list. Marathon events will run this way. Sheets that are run this way will not be reset on completion. A Marathon event can be a one time thing, but they could become available as dungeons later.')
             .addField('~event start', 'The event can be started after **~event dungeon** or **~event set** has been used.')
-            .addField(`~event type [**m** *or* **wc**]`,`Tells ${botName} that you are using minutes (**m**) or wordcount (**wc**) during your sprints.`)
+            .addField(`~event type [**m** *or* **wc**]`, `Tells ${botName} that you are using minutes (**m**) or wordcount (**wc**) during your sprints.`)
             .addField('~event stop', 'Stops the event and removes it from memory. All data will still be available in the spreadsheet.')
             .addField('\u200b', '**Debugging**')
             .addField('~event reload', 'Reloads the event by using the last data saved to the spreadsheet. The event will keep running in the background.')
@@ -251,6 +255,7 @@ class Event
             this.showEnd();
             return;
         }
+        this.sprintChannel = this.channel;
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
         //Bind listeners for event
@@ -260,7 +265,7 @@ class Event
             this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
             this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
-            this.listeners.join.push(this.addListener(join, true, this.joinSprint));
+            this.listeners.join.push(this.addListener(join, false, this.joinSprint));
         });
         //flag the event as started and show begin
         this.running = true;
@@ -382,10 +387,11 @@ class Event
     processSprintWc({ content, author })
     {
         //this.sendFeedbackToChannel("Listened to: " + content, true);
-        const wc = content.match(/(\d+)/);
-        if (wc) {
+        const match = content.match(/(\d+)\s?(new)?/);
+        if (match) {
+            const [, wordcount, newFlag] = match;
             let sprinter = this.getSprinter(author);
-            sprinter.setSprintWc(wc[0]);
+            sprinter.setSprintWc(wordcount, newFlag);
         }
     }
 
@@ -469,13 +475,21 @@ class Event
     }
 
     /**
+     * @return Enemy
+     */
+    getCurrentEnemy()
+    {
+        return this.eventData.enemies.find(({ defeated }) => !defeated);
+    }
+
+    /**
     * Update current enemy in battle
     *
     * @param int
     */
     updateEnemy(wordcount = 0)
     {
-        let currentEnemy = this.eventData.enemies.find(({ defeated }) => !defeated);
+        let currentEnemy = this.getCurrentEnemy();
         if (currentEnemy) {
             currentEnemy.takeDamage(wordcount);
             this.showEnemy(currentEnemy, true);
@@ -489,7 +503,7 @@ class Event
     */
     sprintBegins()
     {
-        let currentEnemy = this.eventData.enemies.find(({ defeated }) => !defeated);
+        let currentEnemy = this.getCurrentEnemy();
         if (currentEnemy) {
             this.showEnemy(currentEnemy, false);
         }
@@ -519,7 +533,7 @@ class Event
         }
         let sprinter = this.getSprinter(message.author);
         sprinter.setType(args[0]);
-        this.sendFeedbackToChannel(`Your sprint type has been set to ${args[0] == 'm' ? 'minutes' : 'wordcount'}`, true);
+        this.sendFeedbackToChannel(`Your sprint type has been set to ${args[0] === 'm' ? 'minutes' : 'wordcount'}`, true);
     }
 
     /**
@@ -527,7 +541,7 @@ class Event
     */
     getSprinter(author)
     {
-        let sprinter = this.eventData.sprinters.find(({ id }) => id == author.id);
+        let sprinter = this.eventData.sprinters.find(({ id }) => id === author.id);
         if (!sprinter) {
             //Sprinter is not in eventData yet. Add it
             sprinter = new Sprinter([
@@ -758,7 +772,7 @@ class Event
             .addField('Wordcount', enemy.health + ' / ' + enemy.wordcount, true)
             .setFooter(EMBED_FOOTER.label, EMBED_FOOTER.value);
 
-        this.sendFeedbackToChannel(embed, true);
+        this.sprintChannel.send(embed);
     }
 
 
@@ -776,7 +790,7 @@ class Event
 
         narrative.setShown();
 
-        this.sendFeedbackToChannel(embed, true);
+        this.sprintChannel.send(embed);
     }
 
     /**
@@ -789,8 +803,42 @@ class Event
             const embed = new this.Discord.MessageEmbed().setTitle("Our heroes:");
 
             sprinters.forEach(({ name, wordcount, icon }) => embed.addField(`${name} ${icon}`, `Written: ${wordcount}`, sprinters.length > 1));
-            this.sendFeedbackToChannel(embed, true);
+            this.sprintChannel.send(embed);
         }
+    }
+
+    /**
+     *  Send message as the narrator to the sprint channel
+     *
+     * @param array args
+     * @param Message message
+     */
+    async narrate(args, message)
+    {
+        const content = message.content.replace(/^~event\snarrate\s/, '');
+        const embed = new this.Discord.MessageEmbed()
+            .setDescription(content)
+            .setTitle("Narrator")
+            .setThumbnail(ANON_ICON);
+        this.sprintChannel.send(embed);
+    }
+
+    /**
+    *  Send message as the enemy to the sprint channel
+    *
+    * @param array args
+    * @param Message message
+    */
+    async banter(args, message)
+    {
+        const { name, thumbnail } = this.getCurrentEnemy();
+
+        const content = message.content.replace(/^~event\sbanter\s/, '');
+        const embed = new this.Discord.MessageEmbed()
+            .setDescription(content)
+            .setTitle(name)
+            .setThumbnail(thumbnail);
+        this.sprintChannel.send(embed);
     }
 
 }

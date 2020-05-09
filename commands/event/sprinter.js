@@ -13,6 +13,7 @@ class Sprinter {
 		this.type = data[4] ? parseInt(data[4]) : 1;
 		this.sprintWc = 0;
 		this.startWc = 0;
+		this.joined = false;
 	}
 
 	/**
@@ -27,17 +28,20 @@ class Sprinter {
 	 */
 	setSprintStartWc(wc)
 	{
-		this.startWc = wc == 'same' ? this.startWc : parseInt(wc);
+		this.startWc = wc === 'same' ? this.startWc : parseInt(wc);
+		this.joined = true;
     }
 
 	/**
 	* @param string|int
 	**/
-	setSprintWc(wordcount)
+	setSprintWc(wordcount, newFlag)
 	{
+		this.startWc = (newFlag !== undefined || !this.joined) ? 0 : this.startWc;
+
 		let wc = parseInt(wordcount) - this.startWc;
 		this.startWc += wc;
-		this.sprintWc = this.type == 1 ? wc : (wc * MULTIPLIER);
+		this.sprintWc = this.type === 1 ? wc : (wc * MULTIPLIER);
 	}
 
 	/**
@@ -47,6 +51,7 @@ class Sprinter {
 	{
 		this.wordcount += this.sprintWc;
 		this.sprintWc = 0;
+		this.joined = false;
 	}
 
 	/**
