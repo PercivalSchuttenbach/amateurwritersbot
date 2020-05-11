@@ -117,15 +117,6 @@ class Controller {
 	}
 
 	/**
-	 * Take a snap shot of Objects currently loaded in memory and save to file
-	 */
-	takeSnapshot()
-	{
-		let snapshot = JSON.stringify(SNAPSHOT_KEYS.map(key => this[key]));
-		console.log(snapshot);
-    }
-
-	/**
 	* @param string command
 	*/
 	getModel(command)

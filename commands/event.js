@@ -447,11 +447,10 @@ class Event
     /**
     * Show begin narrative of the event
     **/
-    showBegin()
+    async showBegin()
     {
-        this.showNarrative(this.eventData.narratives[0]);
-        this.showEnemies();
-        this.showSprinters();
+        await this.showNarrative(this.eventData.narratives[0]);
+        await this.showEnemies();
     }
 
 
@@ -481,8 +480,6 @@ class Event
         await this.updateResource('sprinters', DATA_RANGES.sprinters, sprintersData);
         await this.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
         await this.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
-
-        //this.Controller.takeSnapshot();
     }
 
     /**
@@ -640,6 +637,7 @@ class Event
             this.spreadsheetId = args[0];
 
             if (!(await this.checkIfSpreadSheetExists(this.spreadsheetId))) {
+                this.clearAllData();
                 throw 'SpreadsheetId supplied does not exist. "Try again with "~event set [google spreadsheet id]"';
             }
             await this.setUp().catch(this.handleSetupError.bind(this));
@@ -729,8 +727,10 @@ class Event
             {
                 if (label === 'sprinters') {
                     const member = this.channel.members.get(row[0]);
-                    row[1] = member.displayName;
-                    row.push(member.user.avatarURL());
+                    if (member) {
+                        row[1] = member.displayName;
+                        row.push(member.user.avatarURL());
+                    }
                 }
                 return new Type(row);
             });
@@ -803,9 +803,10 @@ class Event
     /**
      * Show list of enemies still needed to beat
      * */
-    showEnemies()
+    async showEnemies()
     {
-        const embeds = this.eventData.enemies.map(({ name, health, wordcount, healthbar, thumbnail }, key, enemies) =>
+        await this.sprintChannel.send('Enemies:');
+        this.eventData.enemies.forEach(async ({ name, health, wordcount, healthbar, thumbnail }, key, enemies) =>
         {
             if ((key > 0 && !enemies[key - 1].defeated) || health === wordcount) {
                 thumbnail = null;
@@ -814,12 +815,13 @@ class Event
                 wordcount = `${wordcount}`.replace(/[0-9]/gi,'?');
             }
 
-            return new this.Discord.MessageEmbed()
+            const embed = new this.Discord.MessageEmbed()
                 .setAuthor(name, thumbnail)
                 .addField('Health', healthbar, true)
                 .addField('Wordcount', `${health}/${wordcount}`, true);
+
+            await this.sprintChannel.send(embed);
         });
-        this.sprintChannel.send('Enemies:').then(()=>this.loopSendEmbeds(embeds));
     }
 
 
@@ -843,31 +845,19 @@ class Event
     /**
     * Show list of current sprinters
     */
-    showSprinters()
+    async showSprinters()
     {
         const sprinters = this.eventData.sprinters;
         if (sprinters.length) {
-            let embeds = sprinters.map(({ name, wordcount, icon, thumbnail }) =>
+            await this.sprintChannel.send('Our heroes:');
+            sprinters.forEach(async ({ name, wordcount, icon, thumbnail }) =>
             {
-                return new this.Discord.MessageEmbed().setAuthor(`${name} ${icon}`, thumbnail)
+                const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon}`, thumbnail)
                     .setDescription(`Written: ${wordcount}`);
+                await this.sprintChannel.send(embed);
             });
-            this.sprintChannel.send('Our heroes:').then(()=>this.loopSendEmbeds(embeds));
         }
 
-    }
-
-    /**
-     * Send embeds in order
-     * 
-     * @param array embeds
-     */
-    loopSendEmbeds(embeds)
-    {
-        this.sprintChannel.send(embeds.shift()).then(() =>
-        {
-            if (embeds.length) this.loopSendEmbeds(embeds);
-        });
     }
 
     /**

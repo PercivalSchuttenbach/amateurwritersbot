@@ -10,8 +10,6 @@ const Controller = require('./app/controller');
 
 Controller.set({ Discord, Logger, Memory, Client });
 
-//Controller.takeSnapshot();
-
 Client.on("message", Controller.handle.bind(Controller));
 
 Client.on('ready', ()=>{

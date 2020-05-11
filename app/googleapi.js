@@ -17,11 +17,12 @@ class GoogleApi {
 
 	static async getAuth(callback){
 		// Load client secrets from a local file.
-		fs.readFile('./credentials.json', (err, content) => {
-		  if (err) throw `Error loading client secret file: ${err}`;
-		  // Authorize a client with credentials, then call the Google Sheets API.
-		  return this.authorize(JSON.parse(content), callback);
-		});
+		// fs.readFile('./credentials.json', (err, content) => {
+		//   if (err) throw `Error loading client secret file: ${err}`;
+		//   // Authorize a client with credentials, then call the Google Sheets API.
+		//   return this.authorize(JSON.parse(content), callback);
+		// });
+		this.authorize(JSON.parse(process.env.CREDENTIALS), callback);
 	}
 
 	/**
