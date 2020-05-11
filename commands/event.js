@@ -58,7 +58,7 @@ const EMBED_FOOTER = { label: 'By: Book or Bust', value: 'https://media.discorda
 class Event
 {
 
-    constructor({ Client, Discord, message, Controller })
+    constructor({ Client, Discord, Controller })
     {
         /** @var array **/
         this.eventData = {
@@ -170,6 +170,7 @@ class Event
     **/
     async sendFeedbackToChannel(text, direct = false)
     {
+        if (this.silent) return console.log(text);
         if (this.botMessage && !direct) {
             await this.botMessage.edit(text)
                 .then((message => this.botMessage = message).bind(this)).catch(err => console.log(err));
@@ -206,9 +207,10 @@ class Event
     *
     * @param Discord.Message
     **/
-    async event(message)
+    async event(message, silent=false)
     {
         this.channel = message.channel;
+        this.silent = silent;
 
         //Get command and arguments and call subcommand
         let { command, args } = this.getArgs(message);
@@ -223,7 +225,9 @@ class Event
         }
         //execute subcommand method. On error catch and send to channel
         //@todo remove all data on exception
-        this[command](args, message).catch(this.handleError.bind(this));
+        await this[command](args, message).catch(this.handleError.bind(this));
+        this.silent = false;
+        return;
     }
 
     /**
@@ -252,7 +256,7 @@ class Event
     /**
     * Start the event that has been set
     */
-    async start()
+    async start(args, message)
     {
         this.isNotRunning();
 
@@ -275,6 +279,8 @@ class Event
         //flag the event as started and show begin
         this.running = true;
         this.showBegin();
+
+        this.Controller.save(message);
     }
 
     /**
@@ -297,6 +303,8 @@ class Event
         this.removeAllListeners();
         this.clearAllData();
         this.sendFeedbackToChannel(`Event has been stopped.`, true);
+        this.Controller.clearSaved(process.env.PREFIX + 'event');
+        this.Controller.clearSaved(process.env.PREFIX + 'dungeon');
     }
 
     /**
@@ -598,7 +606,7 @@ class Event
     * Run premade Event from DUNGEONS list
     * @param array
     */
-    async dungeon(args)
+    async dungeon(args, message)
     {
         this.isNotRunning();
 
@@ -616,7 +624,8 @@ class Event
         if (!this.areThereEnemiesLeft() && this.dungeonRunning) {
             await this.resetDungeon();
         }
-        this.sendFeedbackToChannel(`Dungeon has been set up! Start with "~event start" and use one of the Sprint bots =)`);
+        await this.sendFeedbackToChannel(`Dungeon has been set up! Start with "~event start" and use one of the Sprint bots =)`);
+        this.Controller.save(message);
     }
 
     /**
@@ -624,14 +633,14 @@ class Event
     *
     * @param array
     **/
-    async set(args)
+    async set(args, message)
     {
         if (this.running || this.settingUp) {
             throw `An event is already running or being setup.`;
         }
         await this.authenticateWithGoogle().catch(this.handleError.bind(this));
         if (args.length) {
-            this.sendFeedbackToChannel(`Retrieving Event spreadsheet...`, true);
+            await this.sendFeedbackToChannel(`Retrieving Event spreadsheet...`, true);
 
             this.settingUp = true;
             this.spreadsheetId = args[0];
@@ -641,6 +650,7 @@ class Event
                 throw 'SpreadsheetId supplied does not exist. "Try again with "~event set [google spreadsheet id]"';
             }
             await this.setUp().catch(this.handleSetupError.bind(this));
+            if (!this.dungeonRunning) this.Controller.save(message);
             return;
         }
         throw 'No spreadsheetId supplied. Try again with "~event set [google spreadsheet id]"';
@@ -916,7 +926,7 @@ module.exports = {
     {
         return true;
     },
-    init: function (resources)
+    init: async function (resources)
     {
         return new Event(resources);
     }

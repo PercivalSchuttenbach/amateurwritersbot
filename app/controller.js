@@ -1,4 +1,4 @@
-const SNAPSHOT_KEYS = ['models','listeners'];
+﻿const { Client } = require('pg');
 
 /**
 * Controller determines to with file the command is delegated
@@ -13,6 +13,7 @@ class Controller {
 		this.models = [];
 		this.listeners = [];
 		this.resources = null;
+		this.toBeSaved = [];
 	}
 
 	/**
@@ -22,6 +23,89 @@ class Controller {
 	{
 		this.resources = resources;
 	}
+
+	/**
+	 * Fetch a previous state from postgres and restore
+	 **/
+	async restore()
+	{
+		const PgClient = new Client({
+			connectionString: process.env.DATABASE_URL,
+			ssl: true,
+		});
+
+		PgClient.connect();
+
+		const query = {
+			text: 'SELECT state FROM states ORDER BY id DESC LIMIT 1',
+			rowMode: 'array'
+		};
+
+		PgClient.query(query, async (err, res) =>
+		{
+			if (err) throw err;
+
+			const json = res.rows[0][0];
+			const { Client } = this.resources;
+
+			for (var i in json) {
+				const { command } = this.getArgs(message);
+				//create a mock message object; fetch all needed resources for the message
+				let message = json[i];
+				message.channel = await Client.channels.fetch(message.channel_id);
+				message.author = await Client.users.fetch(message.author_id);
+				message.member = await message.channel.members.get(message.author_id);
+
+				if (i == 0) await message.channel.send('Oh my... I seem to have crashed... Now this is embarrassing 😳\nPlease give me a moment while I start things up again.');
+
+				await this.process(command, message, false, true);
+			}
+
+			PgClient.end();
+		});
+	}
+
+	/**
+	 * Store executed command to state
+	 * 
+	 * @param {any} param0
+	 */
+	async save({content, channel, author})
+	{
+		this.toBeSaved.push({ content, channel_id: channel.id, author_id: author.id });
+		this.storeInDb();	
+	}
+
+	/**
+	 * Remove all subcommands for given commands from state 
+	 *
+	 * @param {any} command
+	 */
+	async clearSaved(command)
+	{
+		this.toBeSaved = this.toBeSaved.filter(item => item.content.indexOf(command) === -1);
+		this.storeInDb();
+	}
+
+	/**
+	 * Store state in postgress
+	 */
+    async storeInDb()
+	{
+		const PgClient = new Client({
+			connectionString: process.env.DATABASE_URL,
+			ssl: true,
+		});
+
+		PgClient.connect();
+
+		PgClient.query(`UPDATE states SET state = '${JSON.stringify(this.toBeSaved)}' WHERE id = 1`, (err, res) =>
+		{
+			if (err) throw err;
+			PgClient.end();
+		});
+    }
+
 
 	/**
 	* @param Discord.Message.content
@@ -54,19 +138,24 @@ class Controller {
 
 		if(!this.validate(message)) return;
 
-		let {command, args} = this.getArgs(message);
-
-		if(!this.models[command])
-		{
-			let commandModel = this.getModel(command);
-			if(!commandModel || !commandModel.validate(message))
-			{
-				return;
-			}
-			this.models[command] = commandModel.init({...this.resources, message, Controller: this});
-		}
-		this.models[command][command](message);
+		let { command, args } = this.getArgs(message);
+		this.process(command, message);		
 	}
+
+	/**
+	 * Process command message
+	 * 
+	 * @param string command
+	 * @param Message message
+	 */
+	async process(command, message, validate=true, silent=false)
+	{
+		const commandModel = await this.getModel(command, message, validate);
+		if (!commandModel) {
+			return message.channel.send(`Command ${command} does not exist`);
+		}
+		await commandModel[command](message, silent);
+    }
 
 	/**
 	* @param Discord.message
@@ -119,15 +208,22 @@ class Controller {
 	/**
 	* @param string command
 	*/
-	getModel(command)
+	async getModel(command, message, validate=true)
 	{
-		//@var string
-		let commandFile = this.getCommandRoute(command);
-		if(commandFile)
-		{
-			//require works from current file path
-			return require('../commands/' + commandFile.file);
+		if (!this.models[command]) {
+			let commandModel;
+			//@var string
+			const commandFile = this.getCommandRoute(command);
+			if (commandFile) {
+				//require works from current file path
+				commandModel = await require('../commands/' + commandFile.file);
+			}
+			if (!commandModel || (validate && !commandModel.validate(message))) {
+				return;
+			}
+			this.models[command] = await commandModel.init({ ...this.resources, Controller: this });
 		}
+		return this.models[command];
 	}
 
 }

@@ -13,6 +13,7 @@
 		"erlpack": "^0.1.3",
 		"googleapis": "^39.2.0",
 		"iconv": "^3.0.0",
+		"pg": "^8.1.0",
 		"readline-sync": "^1.4.10",
 		"utf-8-validate": "^5.0.2",
 		"winston": "^3.2.1",
