@@ -43,7 +43,7 @@ class Controller {
 
 		PgClient.query(query, async (err, res) =>
 		{
-			if (err) throw err;
+			if (err) return console.log(err);
 
 			const json = res.rows[0][0];
 			const { Client } = this.resources;
@@ -101,7 +101,7 @@ class Controller {
 
 		PgClient.query(`UPDATE states SET state = '${JSON.stringify(this.toBeSaved)}' WHERE id = 1`, (err, res) =>
 		{
-			if (err) throw err;
+			if (err) return console.log(err);
 			PgClient.end();
 		});
     }
