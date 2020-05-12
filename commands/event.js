@@ -605,6 +605,8 @@ class Event
     /**
     * Run premade Event from DUNGEONS list
     * @param array
+    * 
+    * @todo alias to ~dungeon
     */
     async dungeon(message, args)
     {
@@ -870,10 +872,21 @@ class Event
 
     }
 
-    hasAccess(command, message)
+    /**
+     * Check if an event is running and if the user has permission to run the command
+     * 
+     * @param string command
+     * @param Message message
+     */
+    async hasAccess(command, message)
     {
-        this.isRunning().catch(err => this.sendFeedbackToChannel(err, true));
-        if (!SUB_COMMANDS['narrate'](message)) return this.sendFeedbackToChannel('No permission to use this feature.', true);
+        try {
+            this.isRunning()
+        } catch (err) {
+            return this.sendFeedbackToChannel(err, true);
+        }
+
+        if (!SUB_COMMANDS[command](message)) return this.sendFeedbackToChannel('No permission to use this feature.', true);
     }
 
     /**
@@ -886,12 +899,8 @@ class Event
     {
         this.hasAccess('narrate', message);
 
-        const content = message.content.replace(/^~event\snarrate\s/, '');
-        const embed = new this.Discord.MessageEmbed()
-            .setDescription(content)
-            .setTitle("Narrator")
-            .setThumbnail(ANON_ICON);
-        this.sprintChannel.send(embed);
+        const content = message.content.replace(`${process.env.PREFIX}narrate `, '');
+        this.sendInteraction(content, "Narrator", ANON_ICON);
     }
 
     /**
@@ -905,8 +914,19 @@ class Event
         this.hasAccess('banter', message);
 
         const { name, thumbnail } = this.getCurrentEnemy();
+        const content = message.content.replace(`${process.env.PREFIX}banter `, '');
+        this.sendInteraction(content, name, thumbnail);
+    }
 
-        const content = message.content.replace(/^~event\sbanter\s/, '');
+    /**
+     * Send interaction as an embed to the sprint channel
+     * 
+     * @param string content
+     * @param string name
+     * @param string thumbnail
+     */
+    sendInteraction(content, name, thumbnail)
+    {
         const embed = new this.Discord.MessageEmbed()
             .setDescription(content)
             .setTitle(name)

@@ -1,4 +1,6 @@
 ﻿const { Client } = require('pg');
+const DEBUG = parseInt(process.env.DEBUG);
+const DEBUG_CHANNELS = JSON.parse(process.env.CHANNEL_DEBUG);
 
 /**
 * Controller determines to with file the command is delegated
@@ -26,6 +28,8 @@ class Controller {
 
 	/**
 	 * Fetch a previous state from postgres and restore
+	 * 
+	 * @todo split in to smaller functions
 	 **/
 	async restore()
 	{
@@ -92,6 +96,8 @@ class Controller {
 	 */
     async storeInDb()
 	{
+		if (DEBUG) return;
+
 		const PgClient = new Client({
 			connectionString: process.env.DATABASE_URL,
 			ssl: true,
@@ -114,7 +120,7 @@ class Controller {
 	validate({content, channel})
 	{
 		//commpand prefix needs to be in message; if debug enabled we need to be in debug channel
- 		return content.indexOf(this.prefix) == 0 && (!parseInt(process.env.DEBUG) || process.env.CHANNEL_DEBUG == channel.id);
+		return content.indexOf(this.prefix) == 0 && (!DEBUG || DEBUG_CHANNELS.includes(channel.id));
 	}
 
 	/**
@@ -147,6 +153,8 @@ class Controller {
 	 * 
 	 * @param string command
 	 * @param Message message
+	 * @param bool
+	 * @param bool
 	 */
 	async process(command, message, validate=true, silent=false)
 	{
@@ -179,6 +187,8 @@ class Controller {
 
 	/**
 	* @param string
+    * @param string
+    * @param bool
 	* @param Fn
 	*/
 	listenTo(phrase, channelId, bot, callback)
@@ -206,24 +216,27 @@ class Controller {
 	}
 
 	/**
+	 * Get the commandModel from the this.models using the file as key. A file can have multiple commands.
+	 * 
 	* @param string command
+    * @param Message mesage
+    * @param bool validate
+    * @return class
 	*/
 	async getModel(command, message, validate=true)
 	{
-		if (!this.models[command]) {
-			let commandModel;
-			//@var string
-			const commandFile = this.getCommandRoute(command);
-			if (commandFile) {
-				//require works from current file path
-				commandModel = await require('../commands/' + commandFile.file);
-			}
+		const commandFile = this.getCommandRoute(command);
+		if (!commandFile) return;
+
+		if (!this.models[commandFile.file]) {
+			//require works from current file path
+			let commandModel = await require('../commands/' + commandFile.file);
 			if (!commandModel || (validate && !commandModel.validate(message))) {
 				return;
 			}
-			this.models[command] = await commandModel.init({ ...this.resources, Controller: this });
+			this.models[commandFile.file] = await commandModel.init({ ...this.resources, Controller: this });
 		}
-		return this.models[command];
+		return this.models[commandFile.file];
 	}
 
 }

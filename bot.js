@@ -15,7 +15,7 @@ Client.on("message", Controller.handle.bind(Controller));
 Client.on('ready', ()=>{
     //set Status for bot
     Client.user.setActivity('OG: ~help', { type: 'WATCHING' });
-    Controller.restore.bind(Controller).call();
+    if (!parseInt(process.env.DEBUG)) Controller.restore.bind(Controller).call();
 });
 
 Client.login(process.env.CLIENT_TOKEN);
