@@ -31,7 +31,7 @@ class Controller {
 	{
 		const PgClient = new Client({
 			connectionString: process.env.DATABASE_URL,
-			ssl: true,
+			ssl: { rejectUnauthorized: false }
 		});
 
 		PgClient.connect();
@@ -94,7 +94,7 @@ class Controller {
 	{
 		const PgClient = new Client({
 			connectionString: process.env.DATABASE_URL,
-			ssl: true,
+			ssl: { rejectUnauthorized: false }
 		});
 
 		PgClient.connect();
