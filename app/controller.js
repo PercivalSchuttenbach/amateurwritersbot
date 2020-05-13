@@ -53,9 +53,9 @@ class Controller {
 			const { Client } = this.resources;
 
 			for (var i in json) {
-				const { command } = this.getArgs(message);
 				//create a mock message object; fetch all needed resources for the message
 				let message = json[i];
+				const { command } = this.getArgs(message);
 				message.channel = await Client.channels.fetch(message.channel_id);
 				message.author = await Client.users.fetch(message.author_id);
 				message.member = await message.channel.members.get(message.author_id);
