@@ -225,7 +225,7 @@ class Event
         }
         //execute subcommand method. On error catch and send to channel
         //@todo remove all data on exception
-        await this[command](args, message).catch(this.handleError.bind(this));
+        await this[command](message, args).catch(this.handleError.bind(this));
         this.silent = false;
         return;
     }
@@ -256,7 +256,7 @@ class Event
     /**
     * Start the event that has been set
     */
-    async start(args, message)
+    async start(message, args)
     {
         this.isNotRunning();
 
@@ -370,7 +370,7 @@ class Event
     **/
     listenForWc()
     {
-        //this.sendFeedbackToChannel(`Listening for sprint bots for wc`);
+        this.sendFeedbackToChannel(`Listening for sprint bots for wc`);
 
         SPRINT_BOTS.forEach(({ wc_text }) =>
         {
@@ -401,12 +401,12 @@ class Event
     */
     processSprintWc({ content, author })
     {
-        //this.sendFeedbackToChannel("Listened to: " + content, true);
         const match = content.match(/(\d+)\s?(new)?/);
         if (match) {
             const [, wordcount, newFlag] = match;
             let { sprinter } = this.getSprinter(author);
             sprinter.setSprintWc(wordcount, newFlag);
+            this.sendFeedbackToChannel(`${author.name}: ${wordcount} ${newFlag}`, true);
         }
     }
 
@@ -541,7 +541,7 @@ class Event
     * @param array
     * @param Message
     */
-    async type(args, message)
+    async type(message, args)
     {
         this.isRunning();
 
@@ -605,8 +605,10 @@ class Event
     /**
     * Run premade Event from DUNGEONS list
     * @param array
+    * 
+    * @todo alias to ~dungeon
     */
-    async dungeon(args, message)
+    async dungeon(message, args)
     {
         this.isNotRunning();
 
@@ -633,7 +635,7 @@ class Event
     *
     * @param array
     **/
-    async set(args, message)
+    async set(message, args)
     {
         if (this.running || this.settingUp) {
             throw `An event is already running or being setup.`;
@@ -871,19 +873,34 @@ class Event
     }
 
     /**
+     * Check if an event is running and if the user has permission to run the command
+     * 
+     * @param string command
+     * @param Message message
+     */
+    async hasAccess(command, message)
+    {
+        try {
+            this.isRunning()
+        } catch (err) {
+            return this.sendFeedbackToChannel(err, true);
+        }
+
+        if (!SUB_COMMANDS[command](message)) return this.sendFeedbackToChannel('No permission to use this feature.', true);
+    }
+
+    /**
      *  Send message as the narrator to the sprint channel
      *
      * @param array args
      * @param Message message
      */
-    async narrate(args, message)
+    async narrate(message)
     {
-        const content = message.content.replace(/^~event\snarrate\s/, '');
-        const embed = new this.Discord.MessageEmbed()
-            .setDescription(content)
-            .setTitle("Narrator")
-            .setThumbnail(ANON_ICON);
-        this.sprintChannel.send(embed);
+        this.hasAccess('narrate', message);
+
+        const content = message.content.replace(`${process.env.PREFIX}narrate `, '');
+        this.sendInteraction(content, "Narrator", ANON_ICON);
     }
 
     /**
@@ -892,11 +909,24 @@ class Event
     * @param array args
     * @param Message message
     */
-    async banter(args, message)
+    async banter(message)
     {
-        const { name, thumbnail } = this.getCurrentEnemy();
+        this.hasAccess('banter', message);
 
-        const content = message.content.replace(/^~event\sbanter\s/, '');
+        const { name, thumbnail } = this.getCurrentEnemy();
+        const content = message.content.replace(`${process.env.PREFIX}banter `, '');
+        this.sendInteraction(content, name, thumbnail);
+    }
+
+    /**
+     * Send interaction as an embed to the sprint channel
+     * 
+     * @param string content
+     * @param string name
+     * @param string thumbnail
+     */
+    sendInteraction(content, name, thumbnail)
+    {
         const embed = new this.Discord.MessageEmbed()
             .setDescription(content)
             .setTitle(name)

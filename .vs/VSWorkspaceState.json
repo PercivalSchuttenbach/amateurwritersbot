@@ -1,10 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\app",
-    "\\commands",
-    "\\commands\\event"
+    "\\app"
   ],
-  "SelectedNode": "\\app\\googleapi.js",
+  "SelectedNode": "\\app\\commands.js",
   "PreviewInSolutionExplorer": false
 }

@@ -38,9 +38,11 @@ class Sprinter {
 	**/
 	setSprintWc(wordcount, newFlag)
 	{
+		console.log(`old this.startWc ${this.startWc}`);
 		this.startWc = (newFlag !== undefined || !this.joined) ? 0 : this.startWc;
-
+		console.log(`new this.startWc ${this.startWc}`);
 		let wc = parseInt(wordcount) - this.startWc;
+		console.log(`new wc ${wc}`);
 		this.startWc += wc;
 		this.sprintWc = this.type === 1 ? wc : (wc * MULTIPLIER);
 	}
