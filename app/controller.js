@@ -160,7 +160,8 @@ class Controller {
 	{
 		const commandModel = await this.getModel(command, message, validate);
 		if (!commandModel) {
-			return message.channel.send(`Command ${command} does not exist`);
+			return;
+			//message.channel.send(`Command ${command} does not exist`);
 		}
 		await commandModel[command](message, silent);
     }
