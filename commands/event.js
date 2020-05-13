@@ -35,17 +35,17 @@ const DATA_RANGES = {
 const SPRINT_BOTS = [
     {
         start_text: "JOIN THE SPRINT",
-        join: /^_join/,
+        join: /^_join/i,
         collect_start: "TIME'S UP",
-        wc_text: /^_wc\s+\d+/,
+        wc_text: /^_wc\s+\d+/i,
         collect_stop: "CONGRATS EVERYONE",
         writing: "THE SPRINT BEGINS"
     },
     {
         start_text: "A new sprint has been scheduled",
-        join: /!sprint\sjoin/,
+        join: /!sprint\sjoin/i,
         collect_start: "Time is up",
-        wc_text: /^!sprint\s+wc\s+\d+/,
+        wc_text: /^!sprint\s+wc\s+\d+/i,
         collect_stop: /Congratulations to everyone|No-one submitted their wordcounts/,
         writing: "Sprint has started"
     }
