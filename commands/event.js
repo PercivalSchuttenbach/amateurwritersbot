@@ -343,11 +343,22 @@ class Event
     nextNarrative()
     {
         const { sprinters, narratives } = this.eventData;
-        let totalWritten = sprinters.reduce((a, b) => a + b.wordcount, 0);
-        let newNarrative = narratives.find(({ wordcount, shown }) => !shown && totalWritten >= wordcount);
-        if (newNarrative) {
-            this.showNarrative(newNarrative);
-        }
+        const narrative = narratives.find(({ shown }) => !shown);
+        const wordcount = sprinters.reduce((a, b) => a + b.wordcount, 0);
+        const test = { ...this.eventData, wordcount };
+
+        const conditions = narrative.conditions.matchAll(/([a-z]+)=([0-9]+):?(([0-9]+)(%)?)?/g);
+        const show = Array.from(conditions).every(([, entity, value, ,value2, percentage]) =>
+        {
+            if (value2) {
+                value2 = percentage ? value2 / 100 : parseInt(value2);
+                let { health, wordcount } = test[entity][value-1];
+                return health / wordcount <= value2;
+            }
+            return test[entity] >= parseInt(value);
+        });
+
+        if (show) this.showNarrative(narrative);
     }
 
     /**
@@ -370,7 +381,7 @@ class Event
     **/
     listenForWc()
     {
-        this.sendFeedbackToChannel(`Listening for sprint bots for wc`);
+        this.sendFeedbackToChannel(`Listening for sprint bots for wc`,true);
 
         SPRINT_BOTS.forEach(({ wc_text }) =>
         {
@@ -406,7 +417,7 @@ class Event
             const [, wordcount, newFlag] = match;
             let { sprinter } = this.getSprinter(author);
             sprinter.setSprintWc(wordcount, newFlag);
-            this.sendFeedbackToChannel(`${author.name}: ${wordcount} ${newFlag}`, true);
+            this.sendFeedbackToChannel(`${author.username}: ${wordcount} ${newFlag ? newFlag: ''}`, true);
         }
     }
 

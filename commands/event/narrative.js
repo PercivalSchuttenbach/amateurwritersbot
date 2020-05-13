@@ -4,7 +4,7 @@ class Narrative {
 	{
 		this.title = row[0];
 		this.text = row[1];
-		this.wordcount = parseInt(row[2]);
+		this.conditions = row[2];
 		this.image = row[3];
 		this.shown = parseInt(row[4]);
 		this.icon = row[5];
@@ -30,7 +30,7 @@ class Narrative {
 		return [
 			this.title,
 			this.text,
-			this.wordcount,
+			this.conditions,
 			this.image,
 			this.shown,
 			this.icon
