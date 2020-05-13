@@ -910,8 +910,8 @@ class Event
     {
         this.hasAccess('narrate', message);
 
-        const content = message.content.replace(`${process.env.PREFIX}narrate `, '');
-        this.sendInteraction(content, "Narrator", ANON_ICON);
+        const { content, channels } = this.stripMessageForInteraction(message, 'narrate');
+        this.sendInteraction(channels, content, "Narrator", ANON_ICON);
     }
 
     /**
@@ -925,9 +925,28 @@ class Event
         this.hasAccess('banter', message);
 
         const { name, thumbnail } = this.getCurrentEnemy();
-        const content = message.content.replace(`${process.env.PREFIX}banter `, '');
-        this.sendInteraction(content, name, thumbnail);
+        const { content, channels } = this.stripMessageForInteraction(message, 'banter');
+
+        this.sendInteraction(channels, content, name, thumbnail);
     }
+
+    /**
+     * Remove channel mentions and command
+     * 
+     * @param {any} message
+     */
+    stripMessageForInteraction(message, command)
+    {
+        let { content, mentions } = message;
+
+        //strip command and channel mentions
+        content = content
+            .replace(/<#[0-9]+>/g, '')
+            .replace(`${process.env.PREFIX}${command} `, '');
+
+        return {content, channels:mentions.channels};
+    }
+
 
     /**
      * Send interaction as an embed to the sprint channel
@@ -936,12 +955,16 @@ class Event
      * @param string name
      * @param string thumbnail
      */
-    sendInteraction(content, name, thumbnail)
+    sendInteraction(channels, content, name, thumbnail)
     {
         const embed = new this.Discord.MessageEmbed()
             .setDescription(content)
             .setTitle(name)
             .setThumbnail(thumbnail);
+        //send to channels mentioned in original message
+        if (channels) {
+            return channels.forEach(channel => channel.send(embed));
+        }
         this.sprintChannel.send(embed);
     }
 
