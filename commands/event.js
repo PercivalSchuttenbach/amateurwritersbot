@@ -962,7 +962,7 @@ class Event
             .setTitle(name)
             .setThumbnail(thumbnail);
         //send to channels mentioned in original message
-        if (channels) {
+        if (channels.length) {
             return channels.forEach(channel => channel.send(embed));
         }
         this.sprintChannel.send(embed);
