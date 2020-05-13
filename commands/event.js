@@ -622,7 +622,7 @@ class Event
         this.dungeonRunning = true;
 
         //set expects an array of arguments
-        await this.set([dungeon]).catch(this.handleError.bind(this));
+        await this.set(message, [dungeon]).catch(this.handleError.bind(this));
         if (!this.areThereEnemiesLeft() && this.dungeonRunning) {
             await this.resetDungeon();
         }
