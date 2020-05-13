@@ -370,7 +370,7 @@ class Event
     **/
     listenForWc()
     {
-        //this.sendFeedbackToChannel(`Listening for sprint bots for wc`);
+        this.sendFeedbackToChannel(`Listening for sprint bots for wc`);
 
         SPRINT_BOTS.forEach(({ wc_text }) =>
         {
@@ -401,12 +401,12 @@ class Event
     */
     processSprintWc({ content, author })
     {
-        //this.sendFeedbackToChannel("Listened to: " + content, true);
         const match = content.match(/(\d+)\s?(new)?/);
         if (match) {
             const [, wordcount, newFlag] = match;
             let { sprinter } = this.getSprinter(author);
             sprinter.setSprintWc(wordcount, newFlag);
+            this.sendFeedbackToChannel(`${author.name}: ${wordcount} ${newFlag}`, true);
         }
     }
 
