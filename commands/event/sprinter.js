@@ -14,7 +14,7 @@ class Sprinter {
 		this.sprintWc = 0;
 		this.startWc = 0;
 		this.joined = false;
-		this.thumbnail = data[5];
+		this.thumbnail = null;
 	}
 
 	/**
