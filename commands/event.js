@@ -274,7 +274,6 @@ class Event
         this.getSprinters().forEach(({ member }) =>
         {
             member.roles.add(this.warriorRole);
-            member.setNickname(`⚔️ ${member.displayName}`).catch(()=>null);
         });
 
         //Bind listeners for event
@@ -313,7 +312,6 @@ class Event
         this.getSprinters().forEach(({ member }) =>
         {
             member.roles.remove(this.warriorRole);
-            member.setNickname(member.displayName.substr(2)).catch(() => null);;
         });
 
         this.removeAllListeners();
@@ -606,7 +604,6 @@ class Event
             ]);
 
             sprinter.member.roles.add(this.warriorRole);
-            sprinter.member.setNickname(`⚔️ ${member.displayName}`).catch(()=>null);
 
             this.eventData.sprinters.push(sprinter);
             joined = true;
