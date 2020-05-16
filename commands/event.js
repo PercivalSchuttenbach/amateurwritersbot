@@ -4,7 +4,8 @@ const Enemy = require('./event/enemy');
 const Sprinter = require('./event/sprinter');
 const Narrative = require('./event/narrative');
 
-const MOD_ROLE_ID = 635960624702029824;
+const MOD_ROLE_ID = '635960624702029824';
+const WARRIOR_ROLE_ID = '694788170927046677';
 const IS_MOD = ({ member }) => member.roles.highest.id == MOD_ROLE_ID;
 
 /** @var array **/
@@ -99,6 +100,8 @@ class Event
             writing: [],
             join: []
         };
+        /** @var role **/
+        this.warriorRole = null;
     }
 
     /**
@@ -223,6 +226,7 @@ class Event
             this.sendFeedbackToChannel('No permission to use this command.', true);
             return;
         }
+        this.warriorRole = await message.guild.roles.fetch(WARRIOR_ROLE_ID);
         //execute subcommand method. On error catch and send to channel
         //@todo remove all data on exception
         await this[command](message, args).catch(this.handleError.bind(this));
@@ -267,6 +271,12 @@ class Event
         this.sprintChannel = this.channel;
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
+        this.getSprinters().forEach(({ member }) =>
+        {
+            member.roles.add(this.warriorRole);
+            member.setNickname(`⚔️ ${member.displayName}`).catch(()=>null);
+        });
+
         //Bind listeners for event
         SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join }) =>
         {
@@ -299,6 +309,12 @@ class Event
     async stop()
     {
         this.isRunning();
+
+        this.getSprinters().forEach(({ member }) =>
+        {
+            member.roles.remove(this.warriorRole);
+            member.setNickname(member.displayName.substr(2)).catch(() => null);;
+        });
 
         this.removeAllListeners();
         this.clearAllData();
@@ -428,11 +444,15 @@ class Event
     async sumbitSprintWc()
     {
         this.removeListener('wc');
+
+        const sprinters = await this.getCurrentSprinters();
+        
         await this.commit();
         if (!this.areThereEnemiesLeft()) {
-            this.end();
+            return this.end();
         }
-        this.showSprinters();
+
+        this.showSprinters(sprinters);
     }
 
     /**
@@ -452,6 +472,7 @@ class Event
     {
         this.removeAllListeners();
         this.showEnd();
+        this.showSprinters(this.getSprinters());
     }
 
     /**
@@ -580,8 +601,13 @@ class Event
                 0,
                 this.getRandomIcon(),
                 1,
-                member.user.avatarURL()
-            ])
+                member.user.avatarURL(),
+                member
+            ]);
+
+            sprinter.member.roles.add(this.warriorRole);
+            sprinter.member.setNickname(`⚔️ ${member.displayName}`).catch(()=>null);
+
             this.eventData.sprinters.push(sprinter);
             joined = true;
         }
@@ -753,6 +779,7 @@ class Event
                     if (member) {
                         row[1] = member.displayName;
                         row.push(member.user.avatarURL());
+                        row.push(member);
                     }
                 }
                 return new Type(row);
@@ -868,19 +895,35 @@ class Event
     /**
     * Show list of current sprinters
     */
-    async showSprinters()
+    async showSprinters(sprinters)
     {
-        const sprinters = this.eventData.sprinters;
         if (sprinters.length) {
             await this.sprintChannel.send('Our heroes:');
-            sprinters.forEach(async ({ name, wordcount, icon, thumbnail }) =>
-            {
-                const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon}`, thumbnail)
-                    .setDescription(`Written: ${wordcount}`);
-                await this.sprintChannel.send(embed);
-            });
+            sprinters.sort((a, b) => b.wordcount - a.wordcount)
+                .forEach(async ({ name, wordcount, icon, thumbnail }) =>
+                {
+                    const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon}`, thumbnail)
+                        .setDescription(`Written: ${wordcount}`);
+                    await this.sprintChannel.send(embed);
+                });
         }
 
+    }
+
+    /**
+     * @return array
+     */
+    async getCurrentSprinters()
+    {
+        return this.eventData.sprinters.filter((sprinter) => sprinter.sprintWc);
+    }
+
+    /**
+     * @return array
+     */
+    getSprinters()
+    {
+        return this.eventData.sprinters
     }
 
     /**
