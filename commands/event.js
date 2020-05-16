@@ -1,6 +1,7 @@
 const ResourceManager = require('./event/ResourceManager');
 
-const MOD_ROLE_ID = 635960624702029824;
+const MOD_ROLE_ID = '635960624702029824';
+const WARRIOR_ROLE_ID = '694788170927046677'
 const IS_MOD = ({ member }) => member.roles.highest.id == MOD_ROLE_ID;
 
 /** @var array **/
@@ -40,7 +41,6 @@ const SPRINT_BOTS = [
     }
 ];
 
-const ICONS = ['🧙', '🧚', '💂', '🧛', '🧞', '💃', '🕺', '🧘', '👤0', '🧑‍🦼', '🧜', '🤵', '🕵', '👮', '🧑‍🚀'];
 const ANON_ICON = "https://media.discordapp.net/attachments/652184396819857448/706831256700190780/anon.jpg";
 const EMBED_FOOTER = { label: 'By: Book or Bust', value: 'https://media.discordapp.net/attachments/673284825167429642/673302072585748491/NewDashBanner.png?width=573&height=475' };
 
@@ -70,6 +70,8 @@ class Event
             writing: [],
             join: []
         };
+        /* Role */
+        this.warriorRole = null;
 
         /** @var ResourceManager **/
         this.ResourceManager = new ResourceManager(this.sendFeedbackToChannel, this.removeAllListeners);
@@ -192,6 +194,8 @@ class Event
             this.sendFeedbackToChannel('No permission to use this command.', true);
             return;
         }
+        //retrieve warriorRole to assign later
+        this.warriorRole = await message.guild.roles.fetch(WARRIOR_ROLE_ID);
         //execute subcommand method. On error catch and send to channel
         await this[command](message, args).catch(this.handleError.bind(this));
         this.silent = false;
@@ -211,6 +215,8 @@ class Event
         }
         this.sprintChannel = this.channel;
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
+        //Add warriorRole to all sprinters
+        this.getSprinters().forEach(({ member }) => member.roles.add(this.warriorRole));
 
         //Bind listeners for event
         SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join }) =>
@@ -247,9 +253,11 @@ class Event
 
         this.removeAllListeners();
         this.ResourceManager.clearAllData();
+        /*Remove warrior role from sprinters*/
+        this.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
 
         this.sendFeedbackToChannel(`Event has been stopped.`, true);
-
+        /*Remove recovery state from database*/
         this.Controller.clearSaved(process.env.PREFIX + 'event');
         this.Controller.clearSaved(process.env.PREFIX + 'dungeon');
     }
@@ -376,11 +384,13 @@ class Event
     async sumbitSprintWc()
     {
         this.removeListener('wc');
+
+        const sprinters = await this.getCurrentSprinters();
         await this.commit();
         if (!this.areThereEnemiesLeft()) {
-            this.end();
+            return this.end();
         }
-        this.showSprinters();
+        this.showSprinters(sprinters);
     }
 
     /**
@@ -390,6 +400,7 @@ class Event
     {
         this.removeAllListeners();
         this.showEnd();
+        this.showSprinters(this.getSprinters());
     }
 
     /**
@@ -397,8 +408,7 @@ class Event
     */
     showEnd()
     {
-        const narratives = this.eventData.narratives;
-        this.showNarrative(narratives[narratives.length - 1]);
+        this.showNarrative(this.ResourceManager.get('narratives', -1));
     }
 
     /**
@@ -406,7 +416,7 @@ class Event
     **/
     async showBegin()
     {
-        await this.showNarrative(this.eventData.narratives[0]);
+        await this.showNarrative(this.ResourceManager.get('narratives', 0));
         await this.showEnemies();
     }
 
@@ -418,7 +428,7 @@ class Event
     {
         let totalWcCurrentSprint = 0;
         //Map sprinter data to array for spreadsheet
-        const sprintersData = this.eventData.sprinters.map((sprinter) =>
+        const sprintersData = this.ResourceManager.get('sprinters').map((sprinter) =>
         {
             //collect total wc sprint and commit the wc for sprinters
             totalWcCurrentSprint += sprinter.sprintWc;
@@ -429,14 +439,14 @@ class Event
         this.updateEnemy(totalWcCurrentSprint);
 
         //Map enemies data to array for spreadsheet
-        const enemiesData = this.eventData.enemies.map(enemy => enemy.toArray());
+        const enemiesData = this.ResourceManager.get('enemies').map(enemy => enemy.toArray());
         //Map narratives data to array for spreadsheet
-        const narrativesData = this.eventData.narratives.map(narrative => narrative.toArray());
+        const narrativesData = this.ResourceManager.get('narratives').map(narrative => narrative.toArray());
 
         //update sheets on spreadsheet
-        await this.updateResource('sprinters', DATA_RANGES.sprinters, sprintersData);
-        await this.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
-        await this.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
+        await this.ResourceManager.updateResource('sprinters', DATA_RANGES.sprinters, sprintersData);
+        await this.ResourceManager.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
+        await this.ResourceManager.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
     }
 
     /**
@@ -444,7 +454,7 @@ class Event
      */
     getCurrentEnemy()
     {
-        return this.eventData.enemies.find(({ defeated }) => !defeated);
+        return this.ResourceManager.get('enemies').find(({ defeated }) => !defeated);
     }
 
     /**
@@ -476,15 +486,6 @@ class Event
     }
 
     /**
-    * Retrieve random avatar icon for sprinter
-    */
-    getRandomIcon()
-    {
-        const intRandom = Math.floor(Math.random() * ICONS.length);
-        return ICONS[intRandom];
-    }
-
-    /**
     * Set user type
     *
     * @param array
@@ -508,20 +509,14 @@ class Event
     getSprinter(author)
     {
         //@todo refactor using ResourceManager
-        let sprinter = this.eventData.sprinters.find(({ id }) => id === author.id);
+        const sprinter = this.ResourceManager.get('sprinters', ({ id }) => id === author.id);
         let joined = false;
         if (!sprinter) {
             //Sprinter is not in eventData yet. Add it
             const member = this.channel.members.get(author.id);
-            sprinter = new Sprinter([
-                author.id,
-                member.displayName,
-                0,
-                this.getRandomIcon(),
-                1
-            ]);
-            sprinter.thumbnail = member.user.avatarURL();
-            this.eventData.sprinters.push(sprinter);
+            member.roles.add(this.warriorRole);
+
+            this.ResourceManager.addSprinter(author.id, member);
             joined = true;
         }
         return { sprinter, joined };
@@ -578,6 +573,7 @@ class Event
                 {
                     const member = this.channel.members.get(sprinter.id);
                     if (member) {
+                        sprinter.member = member;
                         sprinter.name = member.displayName;
                         sprinter.thumbnail = member.user.avatarURL();
                     }
@@ -596,59 +592,15 @@ class Event
     {
         this.sendFeedbackToChannel(`Clearing old event data...`);
         // remove all sprinters
-        this.clearResource('sprinters', DATA_RANGES.sprinters);
+        this.ResourceManager.clearResource('sprinters', DATA_RANGES.sprinters);
         //Map enemies data to array for spreadsheet
-        const enemiesData = this.eventData.enemies.map(enemy => enemy.reset().toArray());
+        const enemiesData = this.ResourceManager.get('enemies').map(enemy => enemy.reset().toArray());
         //Map narratives data to array for spreadsheet
-        const narrativesData = this.eventData.narratives.map(narrative => narrative.reset().toArray());
+        const narrativesData = this.ResourceManager.get('narratives').map(narrative => narrative.reset().toArray());
 
         //update sheets on spreadsheet
-        await this.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
-        await this.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
-    }
-
-    /**
-    * Update spreadsheet
-    *
-    * @param string
-    * @param string
-    * @param Object
-    **/
-    async updateResource(label, dataRange, data)
-    {
-        //this.sendFeedbackToChannel(`Updating ${label}.`);
-
-        //Try to retrieve the data from the spreadsheet
-        let response = {};
-        try {
-            const request = { spreadsheetId: this.spreadsheetId, range: dataRange, valueInputOption: 'RAW', resource: { values: data } };
-            response = (await this.sheets.spreadsheets.values.update(request));
-        } catch (err) {
-            throw `Could not update ${label}.`;
-        }
-        return;
-    }
-
-    /*
-    * Clear range
-    *
-    * @param string
-    * @param string
-    * @param Object
-    **/
-    async clearResource(label, dataRange)
-    {
-        //this.sendFeedbackToChannel(`Clearing ${label}.`);
-
-        //Try to retrieve the data from the spreadsheet
-        let response = {};
-        try {
-            const request = { spreadsheetId: this.spreadsheetId, range: dataRange };
-            response = (await this.sheets.spreadsheets.values.clear(request));
-        } catch (err) {
-            throw `Could not clear ${label}.`;
-        }
-        return;
+        await this.ResourceManager.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
+        await this.ResourceManager.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
     }
 
     /**
@@ -674,7 +626,7 @@ class Event
     async showEnemies()
     {
         await this.sprintChannel.send('Enemies:');
-        this.eventData.enemies.forEach(async ({ name, health, wordcount, healthbar, thumbnail }, key, enemies) =>
+        this.ResourceManager.get('enemies').forEach(async ({ name, health, wordcount, healthbar, thumbnail }, key, enemies) =>
         {
             if ((key > 0 && !enemies[key - 1].defeated) || health === wordcount) {
                 thumbnail = null;
@@ -713,19 +665,34 @@ class Event
     /**
     * Show list of current sprinters
     */
-    async showSprinters()
+    async showSprinters(sprinters)
     {
-        const sprinters = this.eventData.sprinters;
         if (sprinters.length) {
             await this.sprintChannel.send('Our heroes:');
-            sprinters.forEach(async ({ name, wordcount, icon, thumbnail }) =>
-            {
-                const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon}`, thumbnail)
-                    .setDescription(`Written: ${wordcount}`);
-                await this.sprintChannel.send(embed);
-            });
+            sprinters.sort((a, b) => b.wordcount - a.wordcount)
+                .forEach(async ({ name, wordcount, icon, thumbnail }) =>
+                {
+                    const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wordcount}`, thumbnail);
+                    await this.sprintChannel.send(embed);
+                });
         }
 
+    }
+
+    /**
+     * @return array
+     */
+    async getCurrentSprinters()
+    {
+        return this.ResourceManager.filter('sprinters', (sprinter) => sprinter.sprintWc);
+    }
+
+    /**
+     * @return array
+     */
+    getSprinters()
+    {
+        return this.ResourceManager.get('sprinters');
     }
 
     /**

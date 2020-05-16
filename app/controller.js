@@ -59,6 +59,7 @@ class Controller {
 				message.channel = await Client.channels.fetch(message.channel_id);
 				message.author = await Client.users.fetch(message.author_id);
 				message.member = await message.channel.members.get(message.author_id);
+				message.guild = message.channel.guild;
 
 				if (i == 0) await message.channel.send('Oh my... I seem to have crashed... Now this is embarrassing 😳\nPlease give me a moment while I start things up again.');
 

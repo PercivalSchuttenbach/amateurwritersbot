@@ -5,6 +5,6 @@
     "\\commands",
     "\\commands\\event"
   ],
-  "SelectedNode": "\\app\\controller.js",
+  "SelectedNode": "\\commands\\event\\ResourceManager.js",
   "PreviewInSolutionExplorer": false
 }

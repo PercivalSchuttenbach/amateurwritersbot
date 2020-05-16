@@ -1,4 +1,4 @@
-const GoogleApi = require('../../app/googleapi');
+﻿const GoogleApi = require('../../app/googleapi');
 const { google } = require('googleapis');
 
 const Enemy = require('./enemy');
@@ -10,6 +10,8 @@ const DATA_RANGES = {
     enemies: 'Enemies!A2:G',
     narratives: 'Narrative!A2:F'
 };
+
+const ICONS = ['🧙', '🧚', '💂', '🧛', '🧞', '💃', '🕺', '🧘', '👤0', '🧑‍🦼', '🧜', '🤵', '🕵', '👮', '🧑‍🚀'];
 
 class ResourceManager
 {
@@ -187,15 +189,102 @@ class ResourceManager
     }
 
     /**
-     * @return array of event type
+    * Update spreadsheet
+    *
+    * @param string
+    * @param string
+    * @param Object
+    **/
+    async updateResource(label, dataRange, data)
+    {
+        //this.sendFeedbackToChannel(`Updating ${label}.`);
+
+        //Try to retrieve the data from the spreadsheet
+        let response = {};
+        try {
+            const request = { spreadsheetId: this.spreadsheetId, range: dataRange, valueInputOption: 'RAW', resource: { values: data } };
+            response = (await this.sheets.spreadsheets.values.update(request));
+        } catch (err) {
+            throw `Could not update ${label}.`;
+        }
+        return;
+    }
+
+    /*
+    * Clear range
+    *
+    * @param string
+    * @param string
+    * @param Object
+    **/
+    async clearResource(label, dataRange)
+    {
+        //this.sendFeedbackToChannel(`Clearing ${label}.`);
+
+        //Try to retrieve the data from the spreadsheet
+        let response = {};
+        try {
+            const request = { spreadsheetId: this.spreadsheetId, range: dataRange };
+            response = (await this.sheets.spreadsheets.values.clear(request));
+        } catch (err) {
+            throw `Could not clear ${label}.`;
+        }
+        return;
+    }
+
+    /**
+     * @param {any} types
+     * @param {any} index
+     * @return array
      */
-    get get(types)
+    get(types, index=false)
     {
         if (Array.isArray(type)) {
             return types.map(type => this.eventData[type]);
         }
-
+        if (Number.isInteger(index)) {
+            return this.eventData[types][(Math.sign(index) === -1 ? this.eventData[types].length + index : index)];
+        }
         return this.eventData[types];
+    }
+
+    /**
+     * @param {any} type
+     * @param {any} callback
+     * @return array
+     */
+    filter(type, callback)
+    {
+        return this.eventData[type].filter(callback);
+    }
+
+    /**
+     * @param {any} type
+     * @param {any} callback
+     * @return array
+     */
+    find(type, callback)
+    {
+        return this.eventData[type].find(callback);
+    }
+
+    /**
+    * Retrieve random avatar icon for sprinter
+    */
+    getRandomIcon()
+    {
+        const intRandom = Math.floor(Math.random() * ICONS.length);
+        return ICONS[intRandom];
+    }
+
+    /*Add new sprinter*/
+    addSprinter(author_id, member)
+    {
+        const sprinter = new Sprinter([author_id, '', 0, this.getRandomIcon(), 1]);
+        sprinter.name = member.displayName;
+        sprinter.thumbnail = member.user.avatarURL();
+        sprinter.member = member;
+        this.eventData.sprinters.push();
     }
 
     /**
