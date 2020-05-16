@@ -899,8 +899,7 @@ class Event
             sprinters.sort((a, b) => b.wordcount - a.wordcount)
                 .forEach(async ({ name, wordcount, icon, thumbnail }) =>
                 {
-                    const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon}`, thumbnail)
-                        .setDescription(`Written: ${wordcount}`);
+                    const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wordcount}`, thumbnail);
                     await this.sprintChannel.send(embed);
                 });
         }
