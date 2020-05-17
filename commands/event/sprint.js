@@ -16,7 +16,14 @@ class Sprint
      */
     addSprinters(sprinters)
     {
-        return sprinters.map(sprinter => { return { sprinter, wc: sprinter.sprintWc } });
+        return sprinters.map(sprinter =>
+        {
+            const sprinterData = { sprinter, wc: sprinter.sprintWc, sprint: this };
+            sprinter.sprints.push(sprinterData);
+            sprinter.commit();
+
+            return sprinterData;
+        });
     }
 
     /*
@@ -32,7 +39,7 @@ class Sprint
      */
     getTotalWc()
     {
-        this.sprinters.reduce((sum, sprinter) => sum + sprinter.wc, 0);
+        return this.sprinters.reduce((sum, sprinter) => sum + sprinter.wc, 0);
     }
 
 }

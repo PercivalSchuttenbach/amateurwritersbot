@@ -1,8 +1,9 @@
+//@todo move Sprinter and all related methods to SprintManager
+
 const GoogleApi = require('../app/googleapi');
 const { google } = require('googleapis');
 const Enemy = require('./event/enemy');
 const SprintManager = require('./event/SprintManager');
-const Sprinter = require('./event/sprinter');
 const Narrative = require('./event/narrative');
 
 const MOD_ROLE_ID = '635960624702029824';
@@ -284,8 +285,8 @@ class Event
         SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join }) =>
         {
             this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
-            this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
-            this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
+            this.listeners.col.push(this.addListener(collect_start, false, this.listenForWc));
+            this.listeners.stop.push(this.addListener(collect_stop, false, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
             this.listeners.join.push(this.addListener(join, false, this.joinSprint));
         });
@@ -501,18 +502,11 @@ class Event
     */
     async commit()
     {
-        let totalWcCurrentSprint = 0;
-        this.SprintManager.addSprint(this.getCurrentEnemy().id, this.getCurrentSprinters());
+        const { totalWc } = this.SprintManager.addSprint(this.getCurrentEnemy().id, this.getCurrentSprinters());
         //Map sprinter data to array for spreadsheet
-        const sprintersData = this.eventData.sprinters.map((sprinter) =>
-        {
-            //collect total wc sprint and commit the wc for sprinters
-            totalWcCurrentSprint += sprinter.sprintWc;
-            sprinter.commit();
-            return sprinter.toArray();
-        });
+        const sprintersData = this.eventData.sprinters.map(sprinter => sprinter.toArray());
 
-        this.updateEnemy(totalWcCurrentSprint);
+        this.updateEnemy(totalWc);
 
         //Map enemies data to array for spreadsheet
         const enemiesData = this.eventData.enemies.map(enemy => enemy.toArray());
@@ -775,6 +769,12 @@ class Event
         //if data is available add it to eventData
         const rows = response.data.values;
         if (rows !== undefined && rows.length) {
+            //@todo use Managers for other resources (Enemies, Narratives)
+            if (label === 'sprinters') {
+                this.SprintManager.addSprinter(rows);
+                return;
+            }
+
             this.eventData[label] = rows.map((row) =>
             {
                 if (label === 'sprinters') {
@@ -915,7 +915,7 @@ class Event
     /**
      * @return array
      */
-    async getCurrentSprinters()
+    getCurrentSprinters()
     {
         return this.eventData.sprinters.filter((sprinter) => sprinter.sprintWc);
     }

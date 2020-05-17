@@ -1,4 +1,5 @@
-const Sprint = require('./event/sprint');
+const Sprint = require('./sprint');
+const Sprinter = require('./sprinter');
 
 class SprintManager
 {
@@ -6,6 +7,7 @@ class SprintManager
     constructor()
     {
         this.sprints = [];
+        this.sprinters = [];
         this.increment = 0;
     }
 
@@ -16,6 +18,29 @@ class SprintManager
     {
         const sprint = new Sprint(++this.increment, enemy_id, sprinters);
         this.sprints.push(sprint);
+
+        return sprint;
+    }
+
+    /**
+     * Add data of sprinter(s)
+     */
+    addSprinter(sprinter)
+    {
+        if (Array.isArray(sprinter)) {
+            this.sprinters = sprinter.map((row) =>
+            {
+                //@todo add member data in event.js after setUp
+
+                //const member = this.channel.members.get(row[0]);
+                //if (member) {
+                //    row[1] = member.displayName;
+                //    row.push(member.user.avatarURL());
+                //    row.push(member);
+                //}
+                return new Sprinter(row);
+            });
+        }
     }
 
     /**

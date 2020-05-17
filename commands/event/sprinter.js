@@ -16,6 +16,7 @@ class Sprinter {
 		this.joined = false;
 		this.thumbnail = data[5];
 		this.member = data[6];
+		this.sprints = [];
 	}
 
 	/**
