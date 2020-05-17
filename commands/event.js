@@ -41,7 +41,8 @@ const SPRINT_BOTS = [
         collect_start: "TIME'S UP",
         wc_text: /^_wc\s+\d+/i,
         collect_stop: "CONGRATS EVERYONE",
-        writing: "THE SPRINT BEGINS"
+        writing: "THE SPRINT BEGINS",
+        cancel: "The sprint has been called off."
     },
     {
         start_text: "A new sprint has been scheduled",
@@ -49,7 +50,8 @@ const SPRINT_BOTS = [
         collect_start: "Time is up",
         wc_text: /^!sprint\s+wc\s+\d+/i,
         collect_stop: /Congratulations to everyone|No-one submitted their wordcounts/,
-        writing: "Sprint has started"
+        writing: "Sprint has started",
+        cancel: "Sprint has been cancelled"
     }
 ];
 
@@ -99,7 +101,8 @@ class Event
             wc: [],
             stop: [],
             writing: [],
-            join: []
+            join: [],
+            cancel: []
         };
         /** @var role **/
         this.warriorRole = null;
@@ -157,6 +160,15 @@ class Event
     isNotRunning()
     {
         if (this.running) throw `There is already an event in progress.`;
+    }
+
+    /**
+     * Event has been setup but not running yet
+     */
+    isSetupgButNotRunning()
+    {
+        if (!this.settingUp) throw `There is no event setup yet. See ~event help.`;
+        this.isNotRunning();
     }
 
     /**
@@ -263,7 +275,7 @@ class Event
     */
     async start(message, args)
     {
-        this.isNotRunning();
+        this.isSetupgButNotRunning();
 
         if (!this.areThereEnemiesLeft()) {
             this.showEnd();
@@ -273,9 +285,10 @@ class Event
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
         //Bind listeners for event
-        SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join }) =>
+        SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join, cancel }) =>
         {
             this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
+            this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
             this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
             this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
@@ -306,6 +319,9 @@ class Event
         this.isRunning();
 
         this.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+
+        const { name, thumbnail } = this.getCurrentEnemy();
+        this.sendInteraction("Yes give up. Go back were you came from. Ta-ta!", name, thumbnail);
 
         this.removeAllListeners();
         this.clearAllData();
@@ -342,6 +358,17 @@ class Event
     sprintInitiated()
     {
         this.nextNarrative();
+    }
+
+    /**
+     * Sprint was canceled remove Warriors role
+     */
+    sprintCanceled()
+    {
+        this.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+
+        const { name, thumbnail } = this.getCurrentEnemy();
+        this.sendInteraction("Giving up already? What a shame. Calls themselves writers... Go back to procrastinating!", name, thumbnail);
     }
 
     /**
@@ -961,7 +988,7 @@ class Event
         const { name, thumbnail } = this.getCurrentEnemy();
         const { content, channels } = this.stripMessageForInteraction(message, 'banter');
 
-        this.sendInteraction(channels, content, name, thumbnail);
+        this.sendInteraction(content, name, thumbnail, channels);
     }
 
     /**
@@ -989,14 +1016,14 @@ class Event
      * @param string name
      * @param string thumbnail
      */
-    sendInteraction(channels, content, name, thumbnail)
+    sendInteraction(content, name, thumbnail, channels = null)
     {
         const embed = new this.Discord.MessageEmbed()
             .setDescription(content)
             .setTitle(name)
             .setThumbnail(thumbnail);
         //send to channels mentioned in original message
-        if (channels.size) {
+        if (channels && channels.size) {
             return channels.forEach(channel => channel.send(embed));
         }
         this.sprintChannel.send(embed);
