@@ -272,11 +272,6 @@ class Event
         this.sprintChannel = this.channel;
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
-        this.getSprinters().forEach(({ member }) =>
-        {
-            member.roles.add(this.warriorRole);
-        });
-
         //Bind listeners for event
         SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join }) =>
         {
@@ -310,10 +305,7 @@ class Event
     {
         this.isRunning();
 
-        this.getSprinters().forEach(({ member }) =>
-        {
-            member.roles.remove(this.warriorRole);
-        });
+        this.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
 
         this.removeAllListeners();
         this.clearAllData();
@@ -387,6 +379,7 @@ class Event
 
         let { sprinter, joined } = this.getSprinter(author);
         sprinter.setSprintStartWc(wc);
+        sprinter.member.roles.add(this.warriorRole);
 
         if(joined) this.joinedTheFray(author, sprinter);
     }
@@ -452,6 +445,8 @@ class Event
         }
 
         this.showSprinters(sprinters);
+
+        sprinters.forEach(({ member }) => member.roles.remove(this.warriorRole));
     }
 
     /**
@@ -603,8 +598,6 @@ class Event
                 member.user.avatarURL(),
                 member
             ]);
-
-            sprinter.member.roles.add(this.warriorRole);
 
             this.eventData.sprinters.push(sprinter);
             joined = true;
