@@ -737,6 +737,7 @@ class Event
         this.sendFeedbackToChannel(`Clearing old event data...`);
         // remove all sprinters
         this.clearResource('sprinters', DATA_RANGES.sprinters);
+        this.eventData.sprinters = [];
         //Map enemies data to array for spreadsheet
         const enemiesData = this.eventData.enemies.map(enemy => enemy.reset().toArray());
         //Map narratives data to array for spreadsheet
