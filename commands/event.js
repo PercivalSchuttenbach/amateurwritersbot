@@ -1,6 +1,7 @@
 const GoogleApi = require('../app/googleapi');
 const { google } = require('googleapis');
 const Enemy = require('./event/enemy');
+const SprintManager = require('./event/SprintManager');
 const Sprinter = require('./event/sprinter');
 const Narrative = require('./event/narrative');
 
@@ -65,7 +66,8 @@ class Event
         this.eventData = {
             enemies: [],
             sprinters: [],
-            narratives: []
+            narratives: [],
+            sprints: []
         };
         /** @var Discord **/
         this.Discord = Discord;
@@ -102,6 +104,8 @@ class Event
         };
         /** @var role **/
         this.warriorRole = null;
+        /** @var SprintManager **/
+        this.SprintManager = new SprintManager();
     }
 
     /**
@@ -498,6 +502,7 @@ class Event
     async commit()
     {
         let totalWcCurrentSprint = 0;
+        this.SprintManager.addSprint(this.getCurrentEnemy().id, this.getCurrentSprinters());
         //Map sprinter data to array for spreadsheet
         const sprintersData = this.eventData.sprinters.map((sprinter) =>
         {
@@ -719,6 +724,7 @@ class Event
     async setUp()
     {
         await this.getResource(Enemy, 'enemies', DATA_RANGES.enemies);
+        this.eventData.enemies.forEach((enemy, index) => enemy.id = index + 1);
 
         if (!this.areThereEnemiesLeft() && !this.dungeonRunning) throw `This event already took place. Reset or choose another.`;
 
