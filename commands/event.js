@@ -25,7 +25,8 @@ const SUB_COMMANDS = {
 };
 
 const DUNGEONS = {
-    "test": "1ARcgeXxr_ARNUShlwvP0_vQdDwhkpkS-N7NxnYUfFwQ"
+    "test": "1ARcgeXxr_ARNUShlwvP0_vQdDwhkpkS-N7NxnYUfFwQ",
+    "GoblinRaid": "13IY8v1qH9IdZBT61XTjrW6EodyQX_NzCWRzYypZQ9wA"
 };
 
 
@@ -43,7 +44,8 @@ const SPRINT_BOTS = [
         collect_start: "TIME'S UP",
         wc_text: /^_wc\s+\d+/i,
         collect_stop: "CONGRATS EVERYONE",
-        writing: "THE SPRINT BEGINS"
+        writing: "THE SPRINT BEGINS",
+        cancel: "The sprint has been called off."
     },
     {
         start_text: "A new sprint has been scheduled",
@@ -51,7 +53,8 @@ const SPRINT_BOTS = [
         collect_start: "Time is up",
         wc_text: /^!sprint\s+wc\s+\d+/i,
         collect_stop: /Congratulations to everyone|No-one submitted their wordcounts/,
-        writing: "Sprint has started"
+        writing: "Sprint has started",
+        cancel: "Sprint has been cancelled"
     }
 ];
 
@@ -99,7 +102,8 @@ class Event
             wc: [],
             stop: [],
             writing: [],
-            join: []
+            join: [],
+            cancel: []
         };
         /** @var role **/
         this.warriorRole = null;
@@ -151,6 +155,15 @@ class Event
         for (var key in this.listeners) {
             this.removeListener(key);
         }
+    }
+
+   /**
+   * Event has been setup but not running yet
+   */
+    isSetupgButNotRunning()
+    {
+        if (!this.settingUp) throw `There is no event setup yet. See ~event help.`;
+        this.isNotRunning();
     }
 
     /**
@@ -247,7 +260,7 @@ class Event
             .setTitle(`~Event help ~~aka the faq with your dungeon master~~`)
             .setDescription(`**Disclaimer**\nThe ${botName} bot is underdevelopment by Percy. Bugs can still creep up. If you find one send him a DM or ping him.\n\n"~event" is our D&D feature we use for sprinting dungeons or BoB marathon events.\n${botName} piggy backs on other sprint bots; currently only Sprinto (BudgetWb) and Writer Bot (WB) are supported. Which means you will need to run sprints manually using the available bot while the dungeon or event is running.`)
             .addField('\u200b', '**Commands**')
-            .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.')
+            .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.\n>GoblinRaid A town raided by goblins')
             .addField('~event set [spreadsheet_id]', 'Using this method you can tell the bot to run a spreadsheet not available in the dungeon list. Marathon events will run this way. Sheets that are run this way will not be reset on completion. A Marathon event can be a one time thing, but they could become available as dungeons later.')
             .addField('~event start', 'The event can be started after **~event dungeon** or **~event set** has been used.')
             .addField(`~event type [**m** *or* **wc**]`, `Tells ${botName} that you are using minutes (**m**) or wordcount (**wc**) during your sprints.`)
@@ -265,7 +278,7 @@ class Event
     */
     async start(message, args)
     {
-        this.isNotRunning();
+        this.isSetupgButNotRunning();
 
         if (!this.areThereEnemiesLeft()) {
             this.showEnd();
@@ -274,15 +287,11 @@ class Event
         this.sprintChannel = this.channel;
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
-        this.SprintManager.getSprinters().forEach(({ member }) =>
-        {
-            member.roles.add(this.warriorRole);
-        });
-
         //Bind listeners for event
-        SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join }) =>
+        SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join, cancel }) =>
         {
             this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
+            this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
             this.listeners.col.push(this.addListener(collect_start, false, this.listenForWc));
             this.listeners.stop.push(this.addListener(collect_stop, false, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
@@ -312,10 +321,10 @@ class Event
     {
         this.isRunning();
 
-        this.SprintManager.getSprinters().forEach(({ member }) =>
-        {
-            member.roles.remove(this.warriorRole);
-        });
+        this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+
+        const { name, thumbnail } = this.getCurrentEnemy();
+        this.sendInteraction("Yes give up. Go back were you came from. Ta-ta!", name, thumbnail);
 
         this.removeAllListeners();
         this.clearAllData();
@@ -355,6 +364,17 @@ class Event
     }
 
     /**
+    * Sprint was canceled remove Warriors role
+    */
+    sprintCanceled()
+    {
+        this.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+
+        const { name, thumbnail } = this.getCurrentEnemy();
+        this.sendInteraction("Giving up already? What a shame. Calls themselves writers... Go back to procrastinating!", name, thumbnail);
+    }
+
+    /**
     * Get and show the next narrative based on total wordcount written
     */
     nextNarrative()
@@ -389,6 +409,7 @@ class Event
 
         let { sprinter, joined } = this.getSprinter(author);
         sprinter.setSprintStartWc(wc);
+        sprinter.member.roles.add(this.warriorRole);
 
         if(joined) this.joinedTheFray(author, sprinter);
     }
@@ -452,6 +473,8 @@ class Event
         }
         const sprinters = await this.SprintManager.getCurrentSprinters();
         this.showSprinters(sprinters.sort((a, b) => b.sprintWc - a.sprintWc));
+
+        sprinters.forEach(({ member }) => member.roles.remove(this.warriorRole));
     }
 
     /**
@@ -583,7 +606,6 @@ class Event
             //Sprinter is not in eventData yet. Add it
             const member = this.channel.members.get(author_id);
             sprinter = this.SprintManager.addSprinter(author_id, member);
-            sprinter.member.roles.add(this.warriorRole);
             joined = true;
         }
         return { sprinter, joined };
@@ -717,6 +739,7 @@ class Event
         this.sendFeedbackToChannel(`Clearing old event data...`);
         // remove all sprinters
         this.clearResource('sprinters', DATA_RANGES.sprinters);
+        this.SprintManager.clear();
         //Map enemies data to array for spreadsheet
         const enemiesData = this.eventData.enemies.map(enemy => enemy.reset().toArray());
         //Map narratives data to array for spreadsheet
@@ -917,7 +940,7 @@ class Event
         this.hasAccess('narrate', message);
 
         const { content, channels } = this.stripMessageForInteraction(message, 'narrate');
-        this.sendInteraction(channels, content, "Narrator", ANON_ICON);
+        this.sendInteraction(content, "Narrator", ANON_ICON, channels);
     }
 
     /**
@@ -933,7 +956,7 @@ class Event
         const { name, thumbnail } = this.getCurrentEnemy();
         const { content, channels } = this.stripMessageForInteraction(message, 'banter');
 
-        this.sendInteraction(channels, content, name, thumbnail);
+        this.sendInteraction(content, name, thumbnail, channels);
     }
 
     /**
@@ -961,14 +984,14 @@ class Event
      * @param string name
      * @param string thumbnail
      */
-    sendInteraction(channels, content, name, thumbnail)
+    sendInteraction(content, name, thumbnail, channels=null)
     {
         const embed = new this.Discord.MessageEmbed()
             .setDescription(content)
             .setTitle(name)
             .setThumbnail(thumbnail);
         //send to channels mentioned in original message
-        if (channels.size) {
+        if (channels && channels.size) {
             return channels.forEach(channel => channel.send(embed));
         }
         this.sprintChannel.send(embed);
