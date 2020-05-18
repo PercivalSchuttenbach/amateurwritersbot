@@ -87,7 +87,7 @@ class SprintManager
      */
     get totalWc()
     {
-        this.sprints.reduce((sum, sprint) => sum + sprint.totalWc, 0);
+        this.sprints.reduce((sum, sprint) => sum + sprint.getTotalWc(), 0);
     }
 
     /**

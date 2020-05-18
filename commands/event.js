@@ -270,7 +270,7 @@ class Event
             .addField('~event test [**narrative** *or* **enemies**]', 'Shows you the narrative or enemies of the dungeon or event.')
             .setFooter(EMBED_FOOTER.label, EMBED_FOOTER.value);
 
-        this.sendFeedbackToChannel(embed);
+        this.sendFeedbackToChannel(embed, true);
     }
 
     /**
@@ -292,8 +292,8 @@ class Event
         {
             this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
             this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
-            this.listeners.col.push(this.addListener(collect_start, false, this.listenForWc));
-            this.listeners.stop.push(this.addListener(collect_stop, false, this.sumbitSprintWc));
+            this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
+            this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
             this.listeners.join.push(this.addListener(join, false, this.joinSprint));
         });
@@ -521,7 +521,7 @@ class Event
     */
     async commit()
     {
-        const { totalWc } = this.SprintManager.addSprint(this.getCurrentEnemy().id);
+        const totalWc = this.SprintManager.addSprint(this.getCurrentEnemy().id).getTotalWc();
         //Map sprinter data to array for spreadsheet
         const sprintersData = this.SprintManager.sprintersData;
 

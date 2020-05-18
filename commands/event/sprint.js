@@ -5,8 +5,8 @@ class Sprint
         this.sprinters = sprinters ? this.addSprinters(sprinters) : [];
         this.id = id;
         this.enemyId = enemyId;
-        this.sprinterHighestWc = sprinters ? this.getSprinterWithHighestWc() : 0;
-        this.totalWc = sprinters ? this.getTotalWc() : 0;
+        this.sprinterWithHighestWc = null;
+        this.totalWc = null;
     }
 
     /**
@@ -31,7 +31,10 @@ class Sprint
      */
     getSprinterWithHighestWc()
     {
-        return this.sprinters.reduce((prev, current) => (prev.wc > current.wc) ? prev : current)
+        if (!this.sprinterWithHighestWc) {
+            this.sprinterWithHighestWc = this.sprinters.reduce((prev, current) => (prev.wc > current.wc) ? prev : current);
+        }
+        return this.sprinterWithHighestWc;
     }
 
     /**
@@ -39,7 +42,10 @@ class Sprint
      */
     getTotalWc()
     {
-        return this.sprinters.reduce((sum, sprinter) => sum + sprinter.wc, 0);
+        if (!this.totalWc) {
+            this.totalWc = this.sprinters.reduce((sum, sprinter) => sum + sprinter.wc, 0);
+        }
+        return this.totalWc;
     }
 
     /* Convert sprint data to array */
