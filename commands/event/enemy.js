@@ -1,7 +1,8 @@
 const hearts = {
 	full:"❤️",
 	broken:"💔",
-	empty:"🖤"
+	empty: "🖤",
+	rejuvenate: "💖"
 };
 
 const healthbarLength = 10;
@@ -21,6 +22,7 @@ class Enemy {
 		this.defeatedText = row[6];
 		this.healthbar = '';
 		this.defeated = this.health === 0;
+		this.rejuv = 0;
 		this.setHealthbar();
 	}
 
@@ -52,19 +54,34 @@ class Enemy {
 	}
 
 	/**
+	 * Rejuvenate enemy by wc
+	 * 
+	 * @param {any} rejuvWc
+	 */
+	rejuvenate(rejuvWc)
+	{
+		this.health += rejuvWc;
+		this.rejuv = (rejuvWc / this.wordcount) * healthbarLength;
+    }
+
+	/**
 	* set healthbar
 	*/
 	setHealthbar()
 	{
-		const healthLeft = this.getHealthLeft();
+		const healthLeft = this.getHealthLeft() - this.rejuv;
 		const numHearts = Math.floor(healthLeft);
 		const brokenHeart = Math.ceil(healthLeft - numHearts);
+		const rejuvenate = Math.ceil(this.rejuv);
 
 		this.healthbar = [
 			hearts.full.repeat(numHearts),
+			hearts.rejuvenate.repeat(rejuvenate),
 			hearts.broken.repeat(brokenHeart),
 			hearts.empty.repeat(healthbarLength-Math.ceil(healthLeft))
 		].join('');
+
+		this.rejuv = 0;
 	}
 
 	/**

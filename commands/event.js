@@ -22,7 +22,8 @@ const SUB_COMMANDS = {
     'help': () => true,
     'narrate': IS_MOD,
     'banter': IS_MOD,
-    'stats': () => true
+    'stats': () => true,
+    //'rejuvenate': IS_MOD
 };
 
 const DUNGEONS = {
@@ -294,8 +295,8 @@ class Event
         {
             this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
             this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
-            this.listeners.col.push(this.addListener(collect_start, false, this.listenForWc));
-            this.listeners.stop.push(this.addListener(collect_stop, false, this.sumbitSprintWc));
+            this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
+            this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
             this.listeners.join.push(this.addListener(join, false, this.joinSprint));
         });
@@ -836,6 +837,19 @@ class Event
             throw `Could not clear ${label}.`;
         }
         return;
+    }
+
+    async rejuvenate(message, args)
+    {
+        this.isRunning();
+
+        if (!args.length) throw `No wordcount was supplied to rejuvenate`;
+        const rejuv = parseInt(args[0]);
+        const enemy = this.getCurrentEnemy();
+
+        if (enemy.health + rejuv > enemy.wordcount) throw `Health goes over enemy wordcount. Please decrease giving wordcount`;
+
+        enemy.rejuvenate();
     }
 
     /**
