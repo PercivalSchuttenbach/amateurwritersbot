@@ -11,6 +11,7 @@ class Enemy {
 	constructor(row)
 	{
 		//0 name; 1 wordcount; 2 damage; 3 description; 4 image
+		this.id = null;
 		this.name = row[0];
 		this.wordcount = parseInt(row[1]);
 		this.health = parseInt(row[2]);
