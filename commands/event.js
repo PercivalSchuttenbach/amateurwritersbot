@@ -32,7 +32,8 @@ const DUNGEONS = {
 const DATA_RANGES = {
     sprinters: 'Sprinters!A2:E',
     enemies: 'Enemies!A2:G',
-    narratives: 'Narrative!A2:F'
+    narratives: 'Narrative!A2:F',
+    sprints: 'Sprints!A2:D'
 };
 
 const SPRINT_BOTS = [
@@ -54,7 +55,6 @@ const SPRINT_BOTS = [
     }
 ];
 
-const ICONS = ['🧙', '🧚', '💂', '🧛', '🧞', '💃', '🕺', '🧘', '👤0', '🧑‍🦼', '🧜', '🤵', '🕵', '👮', '🧑‍🚀'];
 const ANON_ICON = "https://media.discordapp.net/attachments/652184396819857448/706831256700190780/anon.jpg";
 const EMBED_FOOTER = { label: 'By: Book or Bust', value: 'https://media.discordapp.net/attachments/673284825167429642/673302072585748491/NewDashBanner.png?width=573&height=475' };
 
@@ -66,9 +66,7 @@ class Event
         /** @var array **/
         this.eventData = {
             enemies: [],
-            sprinters: [],
-            narratives: [],
-            sprints: []
+            narratives: []
         };
         /** @var Discord **/
         this.Discord = Discord;
@@ -136,13 +134,13 @@ class Event
         this.running = false;
         this.eventData = {
             enemies: [],
-            sprinters: [],
             narratives: []
         }
         this.spreadsheetId = null;
         this.botMessage = null;
         this.title = null;
         this.dungeonRunning = false;
+        this.SprintManager.clear();
     }
 
     /**
@@ -276,7 +274,7 @@ class Event
         this.sprintChannel = this.channel;
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
-        this.getSprinters().forEach(({ member }) =>
+        this.SprintManager.getSprinters().forEach(({ member }) =>
         {
             member.roles.add(this.warriorRole);
         });
@@ -314,7 +312,7 @@ class Event
     {
         this.isRunning();
 
-        this.getSprinters().forEach(({ member }) =>
+        this.SprintManager.getSprinters().forEach(({ member }) =>
         {
             member.roles.remove(this.warriorRole);
         });
@@ -361,9 +359,9 @@ class Event
     */
     nextNarrative()
     {
-        const { sprinters, narratives } = this.eventData;
+        const { narratives } = this.eventData;
         const narrative = narratives.find(({ shown }) => !shown);
-        const wordcount = sprinters.reduce((a, b) => a + b.wordcount, 0);
+        const wordcount = this.SprintManager.totalWc;
         const test = { ...this.eventData, wordcount };
 
         const conditions = narrative.conditions.matchAll(/([a-z]+)=([0-9]+):?(([0-9]+)(%)?)?/g);
@@ -447,15 +445,13 @@ class Event
     async sumbitSprintWc()
     {
         this.removeListener('wc');
-
-        const sprinters = await this.getCurrentSprinters();
         
         await this.commit();
         if (!this.areThereEnemiesLeft()) {
             return this.end();
         }
-
-        this.showSprinters(sprinters);
+        const sprinters = await this.SprintManager.getCurrentSprinters();
+        this.showSprinters(sprinters.sort((a, b) => b.sprintWc - a.sprintWc));
     }
 
     /**
@@ -475,7 +471,7 @@ class Event
     {
         this.removeAllListeners();
         this.showEnd();
-        this.showSprinters(this.getSprinters());
+        this.showSprinters(this.SprintManager.getSprinters().sort((a, b)=>b.wordcount - a.wordcount));
     }
 
     /**
@@ -502,12 +498,14 @@ class Event
     */
     async commit()
     {
-        const { totalWc } = this.SprintManager.addSprint(this.getCurrentEnemy().id, this.getCurrentSprinters());
+        const { totalWc } = this.SprintManager.addSprint(this.getCurrentEnemy().id);
         //Map sprinter data to array for spreadsheet
-        const sprintersData = this.eventData.sprinters.map(sprinter => sprinter.toArray());
+        const sprintersData = this.SprintManager.sprintersData;
 
         this.updateEnemy(totalWc);
 
+        //Get Srpints data
+        const sprintsData = this.SprintManager.sprintsData;
         //Map enemies data to array for spreadsheet
         const enemiesData = this.eventData.enemies.map(enemy => enemy.toArray());
         //Map narratives data to array for spreadsheet
@@ -517,6 +515,7 @@ class Event
         await this.updateResource('sprinters', DATA_RANGES.sprinters, sprintersData);
         await this.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
         await this.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
+        await this.updateResource('sprints', DATA_RANGES.sprints, sprintsData);
     }
 
     /**
@@ -556,15 +555,6 @@ class Event
     }
 
     /**
-    * Retrieve random avatar icon for sprinter
-    */
-    getRandomIcon()
-    {
-        const intRandom = Math.floor(Math.random() * ICONS.length);
-        return ICONS[intRandom];
-    }
-
-    /**
     * Set user type
     *
     * @param array
@@ -585,26 +575,15 @@ class Event
     /**
     * @param author
     */
-    getSprinter(author)
+    getSprinter({ id:author_id })
     {
-        let sprinter = this.eventData.sprinters.find(({ id }) => id === author.id);
+        let sprinter = this.SprintManager.getSprinter(author_id);
         let joined = false;
         if (!sprinter) {
             //Sprinter is not in eventData yet. Add it
-            const member = this.channel.members.get(author.id);
-            sprinter = new Sprinter([
-                author.id,
-                member.displayName,
-                0,
-                this.getRandomIcon(),
-                1,
-                member.user.avatarURL(),
-                member
-            ]);
-
+            const member = this.channel.members.get(author_id);
+            sprinter = this.SprintManager.addSprinter(author_id, member);
             sprinter.member.roles.add(this.warriorRole);
-
-            this.eventData.sprinters.push(sprinter);
             joined = true;
         }
         return { sprinter, joined };
@@ -723,7 +702,9 @@ class Event
         if (!this.areThereEnemiesLeft() && !this.dungeonRunning) throw `This event already took place. Reset or choose another.`;
 
         await this.getResource(Narrative, 'narratives', DATA_RANGES.narratives);
-        await this.getResource(Sprinter, 'sprinters', DATA_RANGES.sprinters);
+        await this.getResource(null, 'sprinters', DATA_RANGES.sprinters);
+        this.SprintManager.addMemberData(this.channel.members);
+        await this.getResource(null, 'sprints', DATA_RANGES.sprints);
 
         await this.sendFeedbackToChannel(`Event ${this.title} has been setUp! Start with "~event start" and use one of the Sprint bots =)`);
     }
@@ -774,17 +755,13 @@ class Event
                 this.SprintManager.addSprinter(rows);
                 return;
             }
+            if (label === 'sprints') {
+                this.SprintManager.fillSprints(rows);
+                return;
+            }
 
             this.eventData[label] = rows.map((row) =>
             {
-                if (label === 'sprinters') {
-                    const member = this.channel.members.get(row[0]);
-                    if (member) {
-                        row[1] = member.displayName;
-                        row.push(member.user.avatarURL());
-                        row.push(member);
-                    }
-                }
                 return new Type(row);
             });
             //await this.sendFeedbackToChannel(`Retrieved ${label}.`);
@@ -902,30 +879,14 @@ class Event
     {
         if (sprinters.length) {
             await this.sprintChannel.send('Our heroes:');
-            sprinters.sort((a, b) => b.wordcount - a.wordcount)
-                .forEach(async ({ name, wordcount, icon, thumbnail }) =>
+            sprinters.forEach(async ({ name, icon, thumbnail, wordcount, sprintWc }) =>
                 {
-                    const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wordcount}`, thumbnail);
+                    const wcDisplay = sprintWc ? `+${sprintWc} (${wordcount})` : `${wordcount}`;
+                    const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wcDisplay}`, thumbnail);
                     await this.sprintChannel.send(embed);
                 });
         }
 
-    }
-
-    /**
-     * @return array
-     */
-    getCurrentSprinters()
-    {
-        return this.eventData.sprinters.filter((sprinter) => sprinter.sprintWc);
-    }
-
-    /**
-     * @return array
-     */
-    getSprinters()
-    {
-        return this.eventData.sprinters
     }
 
     /**

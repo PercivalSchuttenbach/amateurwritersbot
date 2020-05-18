@@ -1,22 +1,32 @@
-const TYPES = {"m":2,"wc":1};
+const ICONS = ['🧙', '🧚', '💂', '🧛', '🧞', '💃', '🕺', '🧘', '👤0', '🧑‍🦼', '🧜', '🤵', '🕵', '👮', '🧑‍🚀'];
+const TYPES = { "m": 2, "wc": 1 };
 const MULTIPLIER = 15;
 
 class Sprinter {
 
-	constructor(data, members)
+	constructor([ id=null, name=null, wc=0, icon=null, type=1 ])
 	{
-		this.id = data[0]
-		this.name = data[1];
-		this.wordcount = parseInt(data[2]);
-		this.icon = data[3];
+		this.id = id;
+		this.name = name;
+		this.wordcount = parseInt(wc);
+		this.icon = icon ? icon : this.getRandomIcon();
 		/* 1 is use wordcount. 2 is use minutes*/
-		this.type = data[4] ? parseInt(data[4]) : 1;
+		this.type = type ? parseInt(type) : 1;
 		this.sprintWc = 0;
 		this.startWc = 0;
 		this.joined = false;
-		this.thumbnail = data[5];
-		this.member = data[6];
+		this.thumbnail = null;
+		this.member = null;
 		this.sprints = [];
+	}
+
+	/**
+    * Retrieve random avatar icon for sprinter
+    */
+	getRandomIcon()
+	{
+		const intRandom = Math.floor(Math.random() * ICONS.length);
+		return ICONS[intRandom];
 	}
 
 	/**

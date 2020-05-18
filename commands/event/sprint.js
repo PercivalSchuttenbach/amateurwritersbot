@@ -1,12 +1,12 @@
 class Sprint
 {
-    constructor(id, enemyId, sprinters)
+    constructor(id, enemyId, sprinters=null)
     {
-        this.sprinters = this.addSprinters(sprinters);
+        this.sprinters = sprinters ? this.addSprinters(sprinters) : [];
         this.id = id;
         this.enemyId = enemyId;
-        this.sprinterHighestWc = this.getSprinterWithHighestWc();
-        this.totalWc = this.getTotalWc();
+        this.sprinterHighestWc = sprinters ? this.getSprinterWithHighestWc() : 0;
+        this.totalWc = sprinters ? this.getTotalWc() : 0;
     }
 
     /**
@@ -40,6 +40,23 @@ class Sprint
     getTotalWc()
     {
         return this.sprinters.reduce((sum, sprinter) => sum + sprinter.wc, 0);
+    }
+
+    /* Convert sprint data to array */
+    toArray()
+    {
+        return this.sprinters.map(({ sprinter, wc }) => [this.id, this.enemyId, sprinter.id, wc]);
+    }
+
+    /**
+     * Fill from spreadsheet
+     * 
+     * @param {any} sprinter
+     * @param {any} wc
+     */
+    fill(sprinter, wc)
+    {
+        this.sprinters.push({sprinter, wc, sprint: this});
     }
 
 }
