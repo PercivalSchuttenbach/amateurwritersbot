@@ -36,10 +36,9 @@ class SprintManager
             if (!collect[id]) collect[id] = new Sprint(parseInt(id), parseInt(enemy_id));
             //Get sprinter and push spritns to own array
             const sprinter = this.sprinters.find(({ id }) => id === sprinter_id);
-            sprinter.sprints.push(collect[id]);
             //add sprinter to sprint with wc
             collect[id].fill(sprinter, parseInt(wc));
-
+            sprinter.sprints.push({ wc: parseInt(wc), sprint: collect[id] });
             return collect;
         }, []);
     }
@@ -53,6 +52,7 @@ class SprintManager
             this.sprinters = data.map((row) => new Sprinter(row));
             return;
         }
+
         const sprinter = new Sprinter([data]);
         this.insertMemberData(sprinter, member);
         this.sprinters.push(sprinter);
@@ -87,7 +87,7 @@ class SprintManager
      */
     get totalWc()
     {
-        this.sprints.reduce((sum, sprint) => sum + sprint.getTotalWc(), 0);
+        return this.sprints.reduce((sum, sprint) => sum + sprint.getTotalWc(), 0);
     }
 
     /**

@@ -59,6 +59,18 @@ class Sprinter {
 		this.sprintWc = this.type === 1 ? wc : (wc * MULTIPLIER);
 	}
 
+	/* Get num sprints joined */
+	get numSprints()
+	{
+		return this.sprints.length;
+	}
+
+	/* Get highest sprint wc */
+	get highestWc()
+	{
+		return Math.max(...this.sprints.map(({wc})=>wc));
+    }
+
 	/**
 	* Update wordcount with sprintWc
 	*/

@@ -19,7 +19,7 @@ class Sprint
         return sprinters.map(sprinter =>
         {
             const sprinterData = { sprinter, wc: sprinter.sprintWc, sprint: this };
-            sprinter.sprints.push(sprinterData);
+            sprinter.sprints.push({ wc:sprinter.sprintWc, sprint: this});
             sprinter.commit();
 
             return sprinterData;

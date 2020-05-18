@@ -21,7 +21,8 @@ const SUB_COMMANDS = {
     'reload': IS_MOD,
     'help': () => true,
     'narrate': IS_MOD,
-    'banter': IS_MOD
+    'banter': IS_MOD,
+    'stats': () => true
 };
 
 const DUNGEONS = {
@@ -265,6 +266,7 @@ class Event
             .addField('~event start', 'The event can be started after **~event dungeon** or **~event set** has been used.')
             .addField(`~event type [**m** *or* **wc**]`, `Tells ${botName} that you are using minutes (**m**) or wordcount (**wc**) during your sprints.`)
             .addField('~event stop', 'Stops the event and removes it from memory. All data will still be available in the spreadsheet.')
+            .addField('~event stats', 'Show current event stats.')
             .addField('\u200b', '**Debugging**')
             .addField('~event reload', 'Reloads the event by using the last data saved to the spreadsheet. The event will keep running in the background.')
             .addField('~event test [**narrative** *or* **enemies**]', 'Shows you the narrative or enemies of the dungeon or event.')
@@ -292,8 +294,8 @@ class Event
         {
             this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
             this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
-            this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
-            this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
+            this.listeners.col.push(this.addListener(collect_start, false, this.listenForWc));
+            this.listeners.stop.push(this.addListener(collect_stop, false, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
             this.listeners.join.push(this.addListener(join, false, this.joinSprint));
         });
@@ -494,7 +496,7 @@ class Event
     {
         this.removeAllListeners();
         this.showEnd();
-        this.showSprinters(this.SprintManager.getSprinters().sort((a, b)=>b.wordcount - a.wordcount));
+        this.stats();
     }
 
     /**
@@ -909,7 +911,26 @@ class Event
                     await this.sprintChannel.send(embed);
                 });
         }
+    }
 
+    /* Show sprinters stats */
+    async stats()
+    {
+        this.isRunning();
+
+        const sprinters = this.SprintManager.getSprinters().sort((a, b) => b.wordcount - a.wordcount);
+
+        if (!sprinters.length) return this.sendFeedbackToChannel('No sprinters have sprinted yet', true);
+
+        const totalWritten = this.SprintManager.totalWc;
+        const embeds = sprinters.map(({ name, icon, thumbnail, wordcount, numSprints, highestWc }) =>
+        {
+            return new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wordcount}`, thumbnail)
+                .setDescription(`**Sprint count:** ${numSprints} \u200B \u200B **Highest sprint wc:** ${highestWc}`);
+        });
+        await this.sprintChannel.send('**Stats:**');
+        embeds.forEach(async (embed) => { await this.sprintChannel.send(embed) });
+        this.sprintChannel.send(`**Total written: ${totalWritten}**`);
     }
 
     /**
