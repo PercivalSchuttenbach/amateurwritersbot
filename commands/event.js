@@ -441,7 +441,7 @@ class Event
     **/
     listenForWc()
     {
-        this.sendFeedbackToChannel(`Listening for sprint bots for wc`,true);
+        this.sprintChannel.send(`Listening for sprint bots for wc`);
 
         SPRINT_BOTS.forEach(({ wc_text }) =>
         {
@@ -477,7 +477,7 @@ class Event
             const [, wordcount, newFlag] = match;
             let { sprinter } = this.getSprinter(author);
             sprinter.setSprintWc(wordcount, newFlag);
-            this.sendFeedbackToChannel(`${author.username}: ${wordcount} ${newFlag ? newFlag: ''}`, true);
+            this.sprintChannel.send(`${author.username}: ${wordcount} ${newFlag ? newFlag : ''}`);
         }
     }
 
@@ -993,8 +993,7 @@ class Event
     {
         this.hasAccess('narrate', message);
 
-        const { content, channels } = this.stripMessageForInteraction(message, 'narrate');
-        this.sendInteraction(content, "Narrator", ANON_ICON, channels);
+        this.sendInteraction(message, 'narrate', 'Narrator', ANON_ICON);
     }
 
     /**
@@ -1008,9 +1007,7 @@ class Event
         this.hasAccess('banter', message);
 
         const { name, thumbnail } = this.getCurrentEnemy();
-        const { content, channels } = this.stripMessageForInteraction(message, 'banter');
-
-        this.sendInteraction(content, name, thumbnail, channels);
+        this.sendInteraction(message, 'banter', name, thumbnail);
     }
 
     /**
@@ -1022,12 +1019,15 @@ class Event
     {
         let { content, mentions } = message;
 
+        const images = Array.from(content.matchAll(/(http(s?):)([\/|.|\w|\s|-])*\.(?:png|jpg|jpeg|gif|svg)/g));
+
         //strip command and channel mentions
         content = content
             .replace(/<#[0-9]+>/g, '')
+            .replace(/(http(s?):)([\/|.|\w|\s|-])*\.(?:png|jpg|jpeg|gif|svg)/g, '')
             .replace(`${process.env.PREFIX}${command} `, '');
 
-        return {content, channels:mentions.channels};
+        return {content, channels:mentions.channels, images};
     }
 
 
@@ -1038,17 +1038,25 @@ class Event
      * @param string name
      * @param string thumbnail
      */
-    sendInteraction(content, name, thumbnail, channels=null)
+    sendInteraction(message, type, name, thumbnail)
     {
+        const { content, channels, images } = this.stripMessageForInteraction(message, type);
+
         const embed = new this.Discord.MessageEmbed()
             .setDescription(content)
             .setTitle(name)
             .setThumbnail(thumbnail);
+        //If the images had messages, append the first one to the body of the embed
+        if (images.length) {
+            embed.setImage(images.shift()[0]);
+        }
         //send to channels mentioned in original message
         if (channels && channels.size) {
             return channels.forEach(channel => channel.send(embed));
         }
         this.sprintChannel.send(embed);
+        //if the message has multiple images, iterate and send
+        images.forEach(([imageUrl]) => this.sprintChannel.send(new this.Discord.MessageEmbed().setImage(imageUrl)));
     }
 
     /**
