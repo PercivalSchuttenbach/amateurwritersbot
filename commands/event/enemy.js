@@ -62,6 +62,8 @@ class Enemy {
 	{
 		this.health += rejuvWc;
 		this.rejuv = (rejuvWc / this.wordcount) * healthbarLength;
+
+		this.setHealthbar();
     }
 
 	/**
@@ -69,13 +71,13 @@ class Enemy {
 	*/
 	setHealthbar()
 	{
-		const healthLeft = this.getHealthLeft() - this.rejuv;
+		const healthLeft = this.getHealthLeft();
 		const numHearts = Math.floor(healthLeft);
 		const brokenHeart = Math.ceil(healthLeft - numHearts);
-		const rejuvenate = Math.ceil(this.rejuv);
+		const rejuvenate = this.rejuv > 0.5 ? Math.ceil(this.rejuv) : 0;
 
 		this.healthbar = [
-			hearts.full.repeat(numHearts),
+			hearts.full.repeat(numHearts - rejuvenate),
 			hearts.rejuvenate.repeat(rejuvenate),
 			hearts.broken.repeat(brokenHeart),
 			hearts.empty.repeat(healthbarLength-Math.ceil(healthLeft))

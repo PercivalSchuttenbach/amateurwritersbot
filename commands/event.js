@@ -23,7 +23,7 @@ const SUB_COMMANDS = {
     'narrate': IS_MOD,
     'banter': IS_MOD,
     'stats': () => true,
-    //'rejuvenate': IS_MOD
+    'rejuvenate': IS_MOD
 };
 
 const DUNGEONS = {
@@ -47,7 +47,8 @@ const SPRINT_BOTS = [
         wc_text: /^_wc\s+\d+/i,
         collect_stop: "CONGRATS EVERYONE",
         writing: "THE SPRINT BEGINS",
-        cancel: "The sprint has been called off."
+        cancel: "The sprint has been called off.",
+        leave: /^_leave/i
     },
     {
         start_text: "A new sprint has been scheduled",
@@ -56,7 +57,8 @@ const SPRINT_BOTS = [
         wc_text: /^!sprint\s+wc\s+\d+/i,
         collect_stop: /Congratulations to everyone|No-one submitted their wordcounts/,
         writing: "Sprint has started",
-        cancel: "Sprint has been cancelled"
+        cancel: "Sprint has been cancelled",
+        leave: /^!sprint\sleave/i
     }
 ];
 
@@ -105,7 +107,8 @@ class Event
             stop: [],
             writing: [],
             join: [],
-            cancel: []
+            cancel: [],
+            leave: []
         };
         /** @var role **/
         this.warriorRole = null;
@@ -262,15 +265,18 @@ class Event
             .setTitle(`~Event help ~~aka the faq with your dungeon master~~`)
             .setDescription(`**Disclaimer**\nThe ${botName} bot is underdevelopment by Percy. Bugs can still creep up. If you find one send him a DM or ping him.\n\n"~event" is our D&D feature we use for sprinting dungeons or BoB marathon events.\n${botName} piggy backs on other sprint bots; currently only Sprinto (BudgetWb) and Writer Bot (WB) are supported. Which means you will need to run sprints manually using the available bot while the dungeon or event is running.`)
             .addField('\u200b', '**Commands**')
-            .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.\n>GoblinRaid A town raided by goblins')
-            .addField('~event set [spreadsheet_id]', 'Using this method you can tell the bot to run a spreadsheet not available in the dungeon list. Marathon events will run this way. Sheets that are run this way will not be reset on completion. A Marathon event can be a one time thing, but they could become available as dungeons later.')
+            .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.\n>GoblinRaid A town raided by goblins')            
             .addField('~event start', 'The event can be started after **~event dungeon** or **~event set** has been used.')
             .addField(`~event type [**m** *or* **wc**]`, `Tells ${botName} that you are using minutes (**m**) or wordcount (**wc**) during your sprints.`)
             .addField('~event stop', 'Stops the event and removes it from memory. All data will still be available in the spreadsheet.')
             .addField('~event stats', 'Show current event stats.')
-            .addField('\u200b', '**Debugging**')
+            .addField('\u200b', '**Mod Only**')
+            .addField('~event set [spreadsheet_id]', 'Using this method you can tell the bot to run a spreadsheet not available in the dungeon list. Marathon events will run this way. Sheets that are run this way will not be reset on completion. A Marathon event can be a one time thing, but they could become available as dungeons later.')
             .addField('~event reload', 'Reloads the event by using the last data saved to the spreadsheet. The event will keep running in the background.')
             .addField('~event test [**narrative** *or* **enemies**]', 'Shows you the narrative or enemies of the dungeon or event.')
+            .addField('~event rejuvenate [wordcount]', 'Rejuvenates current enemy with given wordcount.')
+            .addField('~event banter [message]', 'Send a message to sprint channel (or channels mentioned) as the current enemy.')
+            .addField('~event narrate [message]', 'Send a message to sprint channel (or channels mentioned) as the Narrator.')
             .setFooter(EMBED_FOOTER.label, EMBED_FOOTER.value);
 
         this.sendFeedbackToChannel(embed, true);
@@ -291,7 +297,7 @@ class Event
         //this.sendFeedbackToChannel(`Adding listeners for sprint bots for sprint start`);
 
         //Bind listeners for event
-        SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join, cancel }) =>
+        SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join, cancel, leave }) =>
         {
             this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
             this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
@@ -299,6 +305,7 @@ class Event
             this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
             this.listeners.join.push(this.addListener(join, false, this.joinSprint));
+            this.listeners.leave.push(this.addListener(leave, false, this.leaveSprint));
         });
         //flag the event as started and show begin
         this.running = true;
@@ -341,11 +348,11 @@ class Event
      * 
      * @param array args
      */
-    async test(args)
+    async test(message, args)
     {
         const { narratives, enemies } = this.eventData;
 
-        if (args.length) throw `No data type given: *narratives* **or** *enemies*`;
+        if (!args.length) throw `No data type given: *narratives* **or** *enemies*`;
         if (!narratives.length || !enemies.length) throw `There is no data available to show.`;
 
         switch (args[0]) {
@@ -371,7 +378,7 @@ class Event
     */
     sprintCanceled()
     {
-        this.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+        this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
 
         const { name, thumbnail } = this.getCurrentEnemy();
         this.sendInteraction("Giving up already? What a shame. Calls themselves writers... Go back to procrastinating!", name, thumbnail);
@@ -415,6 +422,18 @@ class Event
         sprinter.member.roles.add(this.warriorRole);
 
         if(joined) this.joinedTheFray(author, sprinter);
+    }
+
+    /**
+     * Sprinter leaves
+     * 
+     * @param {any} param0
+     */
+    leaveSprint({ member })
+    {
+        member.roles.remove(this.warriorRole);
+        const { name, thumbnail } = this.getCurrentEnemy();
+        this.sendInteraction("Pha! Coward. Come back, whenever. I'll be waiting...", name, thumbnail);
     }
 
     /**
@@ -847,9 +866,9 @@ class Event
         const rejuv = parseInt(args[0]);
         const enemy = this.getCurrentEnemy();
 
-        if (enemy.health + rejuv > enemy.wordcount) throw `Health goes over enemy wordcount. Please decrease giving wordcount`;
+        if (enemy.health + rejuv > enemy.wordcount) throw `Health goes over enemy wordcount with ${enemy.wordcount - enemy.health - rejuv}. Please decrease giving wordcount`;
 
-        enemy.rejuvenate();
+        enemy.rejuvenate(rejuv);
     }
 
     /**
