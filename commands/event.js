@@ -354,6 +354,8 @@ class Event
         if (!args.length) throw `No data type given: *narratives* **or** *enemies*`;
         if (!narratives.length || !enemies.length) throw `There is no data available to show.`;
 
+        if (!this.sprintChannel) this.sprintChannel = message.channel;
+
         switch (args[0]) {
             case "narrative":
                 narratives.forEach(narrative => this.showNarrative(narrative));
@@ -361,7 +363,42 @@ class Event
             case "enemies":
                 enemies.forEach(enemy => this.showEnemy(enemy, false));
                 break;
+            case "flow":
+                this.testFlow();
+                break;
         }
+    }
+
+    /**
+     * Test narrative flow
+     */
+    async testFlow()
+    {
+        const { narratives, enemies } = this.eventData;
+        const test = { ...this.eventData, wordcount:0 };
+
+        narratives.forEach(narrative =>
+        {
+            const conditions = narrative.conditions.matchAll(/([a-z]+)=([0-9]+):?(([0-9]+)(%)?)?/g);
+            Array.from(conditions).every(([, entity, value, , value2, percentage]) =>
+            {
+                if (value2) {
+                    const enemy = test[entity][value - 1];
+                    const points = parseInt(value2);
+                    const damage = percentage ? ((100 - points) / 100) * enemy.wordcount : (points === 0 ? enemy.health : points);
+                    //this.sendFeedbackToChannel(`H${health} WC:${wordcount} V:${value2}`, true);
+                    enemy.takeDamage(damage);
+                    this.showEnemy(enemy);
+                    return true;
+                }
+                //this.sendFeedbackToChannel(`${entity}: ${value}`, true);
+                if (test[entity] !== value) {
+                    //decrease enemies
+                }
+                return true;
+            });
+            this.showNarrative(narrative);
+        });
     }
 
     /**
