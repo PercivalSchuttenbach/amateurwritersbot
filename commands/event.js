@@ -386,6 +386,8 @@ class Event
                     const enemy = test[entity][value - 1];
                     const points = parseInt(value2);
                     const damage = percentage ? ((100 - points) / 100) * enemy.wordcount : (points === 0 ? enemy.health : points);
+                    //show before death
+                    if (wordcount === health && health === damage) this.showEnemy(enemy);
                     //this.sendFeedbackToChannel(`H${health} WC:${wordcount} V:${value2}`, true);
                     enemy.takeDamage(damage);
                     this.showEnemy(enemy);
