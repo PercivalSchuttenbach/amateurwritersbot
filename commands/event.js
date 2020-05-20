@@ -333,8 +333,7 @@ class Event
 
         this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
 
-        const { name, thumbnail } = this.getCurrentEnemy();
-        this.sendInteraction("Yes give up. Go back were you came from. Ta-ta!", name, thumbnail);
+        this.enemyInteraction("Yes give up. Go back were you came from. Ta-ta!");
 
         this.removeAllListeners();
         this.clearAllData();
@@ -379,9 +378,7 @@ class Event
     sprintCanceled()
     {
         this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
-
-        const { name, thumbnail } = this.getCurrentEnemy();
-        this.sendInteraction("Giving up already? What a shame. Calls themselves writers... Go back to procrastinating!", name, thumbnail);
+        this.enemyInteraction("Giving up already? What a shame. Calls themselves writers... Go back to procrastinating!");
     }
 
     /**
@@ -432,8 +429,7 @@ class Event
     leaveSprint({ member })
     {
         member.roles.remove(this.warriorRole);
-        const { name, thumbnail } = this.getCurrentEnemy();
-        this.sendInteraction("Pha! Coward. Come back, whenever. I'll be waiting...", name, thumbnail);
+        this.enemyInteraction("Pha! Coward. Come back, whenever. I'll be waiting...");
     }
 
     /**
@@ -1052,11 +1048,29 @@ class Event
         }
         //send to channels mentioned in original message
         if (channels && channels.size) {
-            return channels.forEach(channel => channel.send(embed));
+            channels.forEach(channel => channel.send(embed));
+        } else {
+            this.sprintChannel.send(embed);
         }
-        this.sprintChannel.send(embed);
         //if the message has multiple images, iterate and send
         images.forEach(([imageUrl]) => this.sprintChannel.send(new this.Discord.MessageEmbed().setImage(imageUrl)));
+    }
+
+    /**
+     * Send enemy interaction on Sprinter actions
+     * 
+     * @param {any} content
+     */
+    enemyInteraction(content)
+    {
+        const { name, thumbnail } = this.getCurrentEnemy();
+
+        const embed = new this.Discord.MessageEmbed()
+            .setDescription(content)
+            .setTitle(name)
+            .setThumbnail(thumbnail);
+
+        this.sprintChannel.send(embed);
     }
 
     /**
