@@ -31,14 +31,14 @@ class SprintManager
     {
         this.sprints = rows.reduce((collect, row) =>
         {
-            const [id, enemy_id, sprinter_id, wc] = row;
+            const [sprint_id, enemy_id, sprinter_id, wc] = row;
             //If sprint does not exist yet create it
-            if (!collect[id]) collect[id] = new Sprint(parseInt(id), parseInt(enemy_id));
+            if (!collect[sprint_id]) collect[sprint_id] = new Sprint(parseInt(sprint_id), parseInt(enemy_id));
             //Get sprinter and push spritns to own array
             const sprinter = this.sprinters.find(({ id }) => id === sprinter_id);
             //add sprinter to sprint with wc
-            collect[id].fill(sprinter, parseInt(wc));
-            sprinter.sprints.push({ wc: parseInt(wc), sprint: collect[id] });
+            collect[sprint_id].fill(sprinter, parseInt(wc));
+            sprinter.sprints.push({ wc: parseInt(wc), sprint: collect[sprint_id] });
             return collect;
         }, []);
     }
@@ -68,9 +68,11 @@ class SprintManager
      */
     insertMemberData(sprinter, member)
     {
-        sprinter.member = member;
-        sprinter.name = member.displayName;
-        sprinter.thumbnail = member.user.avatarURL();
+        if (member) {
+            sprinter.member = member;
+            sprinter.name = member.displayName;
+            sprinter.thumbnail = member.user.avatarURL();
+        }
     }
 
     /**

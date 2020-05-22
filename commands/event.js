@@ -265,7 +265,7 @@ class Event
             .setTitle(`~Event help ~~aka the faq with your dungeon master~~`)
             .setDescription(`**Disclaimer**\nThe ${botName} bot is underdevelopment by Percy. Bugs can still creep up. If you find one send him a DM or ping him.\n\n"~event" is our D&D feature we use for sprinting dungeons or BoB marathon events.\n${botName} piggy backs on other sprint bots; currently only Sprinto (BudgetWb) and Writer Bot (WB) are supported. Which means you will need to run sprints manually using the available bot while the dungeon or event is running.`)
             .addField('\u200b', '**Commands**')
-            .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.\n>GoblinRaid A town raided by goblins')            
+            .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.\n> GoblinRaid A town raided by goblins')            
             .addField('~event start', 'The event can be started after **~event dungeon** or **~event set** has been used.')
             .addField(`~event type [**m** *or* **wc**]`, `Tells ${botName} that you are using minutes (**m**) or wordcount (**wc**) during your sprints.`)
             .addField('~event stop', 'Stops the event and removes it from memory. All data will still be available in the spreadsheet.')
@@ -329,11 +329,11 @@ class Event
     **/
     async stop()
     {
-        this.isRunning();
+        if (!this.running && !this.settingUp) throw `No event to stop.`;
 
         this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
 
-        this.enemyInteraction("Yes give up. Go back were you came from. Ta-ta!");
+        if (this.sprintChannel) this.enemyInteraction("Yes give up. Go back were you came from. Ta-ta!");
 
         this.removeAllListeners();
         this.clearAllData();
@@ -713,7 +713,12 @@ class Event
         this.dungeonRunning = true;
 
         //set expects an array of arguments
-        await this.set(message, [dungeon]).catch(this.handleError.bind(this));
+        try {
+            await this.set(message, [dungeon]);
+        } catch (e) {
+            this.handleSetupError(e);
+            return;
+        }
         if (!this.areThereEnemiesLeft() && this.dungeonRunning) {
             await this.resetDungeon();
         }
@@ -731,7 +736,7 @@ class Event
         if (this.running || this.settingUp) {
             throw `An event is already running or being setup.`;
         }
-        await this.authenticateWithGoogle().catch(this.handleError.bind(this));
+        await this.authenticateWithGoogle();
         if (args.length) {
             await this.sendFeedbackToChannel(`Retrieving Event spreadsheet...`, true);
 
@@ -742,7 +747,7 @@ class Event
                 this.clearAllData();
                 throw 'SpreadsheetId supplied does not exist. "Try again with "~event set [google spreadsheet id]"';
             }
-            await this.setUp().catch(this.handleSetupError.bind(this));
+            await this.setUp();
             if (!this.dungeonRunning) this.Controller.save(message);
             return;
         }
@@ -796,6 +801,7 @@ class Event
         this.sendFeedbackToChannel(`Clearing old event data...`);
         // remove all sprinters
         this.clearResource('sprinters', DATA_RANGES.sprinters);
+        this.clearResource('sprints', DATA_RANGES.sprints);
         this.SprintManager.clear();
         //Map enemies data to array for spreadsheet
         const enemiesData = this.eventData.enemies.map(enemy => enemy.reset().toArray());
@@ -816,8 +822,7 @@ class Event
     **/
     async getResource(Type, label, dataRange)
     {
-        //await this.sendFeedbackToChannel(`Retrieving ${label}.`);
-
+        await this.sendFeedbackToChannel(`Retrieving ${label}.`);
         //Try to retrieve the data from the spreadsheet
         let response = {};
         try {
