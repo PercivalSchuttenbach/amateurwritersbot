@@ -1137,30 +1137,34 @@ class Event
      * @param {any} message
      * @param {any} args
      */
-    //async countdown(message, args)
-    //{
-    //    if(!args.length) throw `no countdown amount given.`
+    async countdown(message, args)
+    {
+        if(!args.length) throw `no countdown seconds given.`
 
-    //    const [count, ...content] = args;
+        const [count, ...content] = args;
+        const channel = message.mentions.channels.size ? message.mentions.channels.first(1)[0] : message.channel;
 
-    //    this.count = args[0];
-    //    this.countDownContent = content.join(' ');
-    //    message.channel.send(this.countDownContent).then(function(msg){ this.countDownMessage = msg; }.bind(this));
-    //    this.countDownTick();
-    //}
+        this.count = count;
+        this.countDownContent = content.join(' ').replace(/<#[0-9]+>/g, '');
+        await channel.send(this.countDownContent).then(function (msg) { this.countDownMessage = msg; }.bind(this));
+        this.updateCountDown();
+        this.countDownTick();
+    }
 
-    //updateCountDown()
-    //{
-    //    this.countDownMessage.edit(`${this.countDownContent}\n\n${this.count}`);
-    //    this.countDownTick();
-    //}
+    updateCountDown()
+    {
+        var time = new Date(0, 0, 0, 0, 0, this.count).toTimeString().split(' ')[0];
+        this.countDownMessage.edit(`${this.countDownContent}\n\n${time}`);
+        this.countDownTick();
+    }
 
-    //countDownTick()
-    //{
-    //    if (this.count === 0) return;
-    //    const timeout = this.Client.setTimeout(this.updateCountDown.bind(this), 1000);
-    //    this.count--;
-    //}
+    countDownTick()
+    {
+        if (this.count === 0) return;
+        const time = this.count / 60 < 0 ? 1000 : 60000;
+        const timeout = this.Client.setTimeout(this.updateCountDown.bind(this), time);
+        this.count -= time/1000;
+    }
 }
 
 module.exports = {
