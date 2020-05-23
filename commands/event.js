@@ -23,7 +23,8 @@ const SUB_COMMANDS = {
     'narrate': IS_MOD,
     'banter': IS_MOD,
     'stats': () => true,
-    'rejuvenate': IS_MOD
+    'rejuvenate': IS_MOD,
+    'countdown': ()=> true
 };
 
 const DUNGEONS = {
@@ -53,7 +54,7 @@ const SPRINT_BOTS = [
     {
         start_text: "A new sprint has been scheduled",
         join: /!sprint\sjoin/i,
-        collect_start: "Time is up",
+        collect_start: /Time is up|Waiting for word counts/,
         wc_text: /^!sprint\s+wc\s+\d+/i,
         collect_stop: /Congratulations to everyone|No-one submitted their wordcounts/,
         writing: "Sprint has started",
@@ -162,9 +163,9 @@ class Event
         }
     }
 
-   /**
-   * Event has been setup but not running yet
-   */
+    /**
+    * Event has been setup but not running yet
+    */
     isSetupgButNotRunning()
     {
         if (!this.settingUp) throw `There is no event setup yet. See ~event help.`;
@@ -231,7 +232,7 @@ class Event
     *
     * @param Discord.Message
     **/
-    async event(message, silent=false)
+    async event(message, silent = false)
     {
         this.channel = message.channel;
         this.silent = silent;
@@ -265,7 +266,7 @@ class Event
             .setTitle(`~Event help ~~aka the faq with your dungeon master~~`)
             .setDescription(`**Disclaimer**\nThe ${botName} bot is underdevelopment by Percy. Bugs can still creep up. If you find one send him a DM or ping him.\n\n"~event" is our D&D feature we use for sprinting dungeons or BoB marathon events.\n${botName} piggy backs on other sprint bots; currently only Sprinto (BudgetWb) and Writer Bot (WB) are supported. Which means you will need to run sprints manually using the available bot while the dungeon or event is running.`)
             .addField('\u200b', '**Commands**')
-            .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.\n> GoblinRaid A town raided by goblins')            
+            .addField('~event dungeon [name]', 'Starts an existing dungeon. During the sprints the data will be saved to a Google Spreadsheet. Every time the same dungeon is started it will start from were it left of last time. After the dungeon has been completed it will reset itself. Currently available:\n> test : initial test dungeon. Contains random strings for narrative, but has pretty heavy bosses.\n> GoblinRaid A town raided by goblins')
             .addField('~event start', 'The event can be started after **~event dungeon** or **~event set** has been used.')
             .addField(`~event type [**m** *or* **wc**]`, `Tells ${botName} that you are using minutes (**m**) or wordcount (**wc**) during your sprints.`)
             .addField('~event stop', 'Stops the event and removes it from memory. All data will still be available in the spreadsheet.')
@@ -375,7 +376,7 @@ class Event
     async testFlow()
     {
         const { narratives, enemies } = this.eventData;
-        const test = { ...this.eventData, wordcount:0 };
+        const test = { ...this.eventData, wordcount: 0 };
 
         narratives.forEach(narrative =>
         {
@@ -431,11 +432,11 @@ class Event
         const test = { ...this.eventData, wordcount };
 
         const conditions = narrative.conditions.matchAll(/([a-z]+)=([0-9]+):?(([0-9]+)(%)?)?/g);
-        const show = Array.from(conditions).every(([, entity, value, ,value2, percentage]) =>
+        const show = Array.from(conditions).every(([, entity, value, , value2, percentage]) =>
         {
             if (value2) {
                 value2 = percentage ? value2 / 100 : parseInt(value2);
-                let { health, wordcount } = test[entity][value-1];
+                let { health, wordcount } = test[entity][value - 1];
                 return health / wordcount <= value2;
             }
             return test[entity] >= parseInt(value);
@@ -457,7 +458,7 @@ class Event
         sprinter.setSprintStartWc(wc);
         sprinter.member.roles.add(this.warriorRole);
 
-        if(joined) this.joinedTheFray(author, sprinter);
+        if (joined) this.joinedTheFray(author, sprinter);
     }
 
     /**
@@ -523,7 +524,7 @@ class Event
     async sumbitSprintWc()
     {
         this.removeListener('wc');
-        
+
         await this.commit();
         if (!this.areThereEnemiesLeft()) {
             return this.end();
@@ -655,7 +656,7 @@ class Event
     /**
     * @param author
     */
-    getSprinter({ id:author_id })
+    getSprinter({ id: author_id })
     {
         let sprinter = this.SprintManager.getSprinter(author_id);
         let joined = false;
@@ -940,7 +941,7 @@ class Event
                 thumbnail = null;
                 name = name.replace(/./gi, '?');
                 health = `${health}`.replace(/[0-9]/gi, '?');
-                wordcount = `${wordcount}`.replace(/[0-9]/gi,'?');
+                wordcount = `${wordcount}`.replace(/[0-9]/gi, '?');
             }
 
             const embed = new this.Discord.MessageEmbed()
@@ -978,11 +979,11 @@ class Event
         if (sprinters.length) {
             await this.sprintChannel.send('Our heroes:');
             sprinters.forEach(async ({ name, icon, thumbnail, wordcount, sprintWc }) =>
-                {
-                    const wcDisplay = sprintWc ? `+${sprintWc} (${wordcount})` : `${wordcount}`;
-                    const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wcDisplay}`, thumbnail);
-                    await this.sprintChannel.send(embed);
-                });
+            {
+                const wcDisplay = sprintWc ? `+${sprintWc} (${wordcount})` : `${wordcount}`;
+                const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wcDisplay}`, thumbnail);
+                await this.sprintChannel.send(embed);
+            });
         }
     }
 
@@ -1067,7 +1068,7 @@ class Event
             .replace(/(http(s?):)([\/|.|\w|\s|-])*\.(?:png|jpg|jpeg|gif|svg)/g, '')
             .replace(`${process.env.PREFIX}${command} `, '');
 
-        return {content, channels:mentions.channels, images};
+        return { content, channels: mentions.channels, images };
     }
 
 
@@ -1130,6 +1131,36 @@ class Event
         this.sprintChannel.send(embed);
     }
 
+
+    /**
+     * Working on countdown
+     * @param {any} message
+     * @param {any} args
+     */
+    //async countdown(message, args)
+    //{
+    //    if(!args.length) throw `no countdown amount given.`
+
+    //    const [count, ...content] = args;
+
+    //    this.count = args[0];
+    //    this.countDownContent = content.join(' ');
+    //    message.channel.send(this.countDownContent).then(function(msg){ this.countDownMessage = msg; }.bind(this));
+    //    this.countDownTick();
+    //}
+
+    //updateCountDown()
+    //{
+    //    this.countDownMessage.edit(`${this.countDownContent}\n\n${this.count}`);
+    //    this.countDownTick();
+    //}
+
+    //countDownTick()
+    //{
+    //    if (this.count === 0) return;
+    //    const timeout = this.Client.setTimeout(this.updateCountDown.bind(this), 1000);
+    //    this.count--;
+    //}
 }
 
 module.exports = {

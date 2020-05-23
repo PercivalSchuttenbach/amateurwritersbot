@@ -39,6 +39,8 @@ class SprintManager
             //add sprinter to sprint with wc
             collect[sprint_id].fill(sprinter, parseInt(wc));
             sprinter.sprints.push({ wc: parseInt(wc), sprint: collect[sprint_id] });
+
+            this.increment = sprint_id;
             return collect;
         }, []);
     }
