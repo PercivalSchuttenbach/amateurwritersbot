@@ -302,8 +302,8 @@ class Event
         {
             this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
             this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
-            this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
-            this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
+            this.listeners.col.push(this.addListener(collect_start, false, this.listenForWc));
+            this.listeners.stop.push(this.addListener(collect_stop, false, this.sumbitSprintWc));
             this.listeners.writing.push(this.addListener(writing, true, this.sprintBegins));
             this.listeners.join.push(this.addListener(join, false, this.joinSprint));
             this.listeners.leave.push(this.addListener(leave, false, this.leaveSprint));
@@ -334,7 +334,7 @@ class Event
 
         this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
 
-        if (this.sprintChannel) this.enemyInteraction("Yes give up. Go back were you came from. Ta-ta!");
+        if (this.areThereEnemiesLeft() && this.sprintChannel) this.enemyInteraction("Yes give up. Go back were you came from. Ta-ta!");
 
         this.removeAllListeners();
         this.clearAllData();
@@ -550,9 +550,9 @@ class Event
     */
     end()
     {
-        this.removeAllListeners();
         this.showEnd();
         this.stats();
+        this.stop();
     }
 
     /**
