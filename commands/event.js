@@ -1055,8 +1055,11 @@ class Event
             const messageReaction = collected.reduce((prev, curr) => { return prev && prev.count > curr.count ? prev : curr; });
             const [,,entity,id] = actions[nrs.indexOf(messageReaction.emoji.name)];
 
-            const action = this.eventData[entity][id - 1];
+            actions.forEach(([, , aEntity, aId]) => { if (id !== aId) this.eventData[entity][aId - 1].setShown(); });
             this.eventData[entity].forEach((item, index) => { if (index <= id - 1) item.setShown(); });
+
+            const action = this.eventData[entity][id - 1];
+
 
             if (entity === 'narratives') this.showNarrative(action);
         });
