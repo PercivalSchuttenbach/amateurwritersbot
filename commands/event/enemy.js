@@ -20,6 +20,7 @@ class Enemy {
 		this.image = row[4];
 		this.thumbnail = row[5]
 		this.defeatedText = row[6];
+		this.gold = parseInt(row[7]);
 		this.healthbar = '';
 		this.defeated = this.health === 0;
 		this.rejuv = 0;
@@ -37,6 +38,12 @@ class Enemy {
 
 		return this;
 	}
+
+	/* Mark enemy as defeated */
+	setShown()
+	{
+		this.defeated = 1;
+    }
 
 	/**
 	* @param int
@@ -132,7 +139,8 @@ class Enemy {
 			this.description,
 			this.image,
 			this.thumbnail,
-			this.defeatedText
+			this.defeatedText,
+			this.gold
 		];
 	}
 

@@ -4,7 +4,7 @@ const MULTIPLIER = 15;
 
 class Sprinter {
 
-	constructor([ id=null, name=null, wc=0, icon=null, type=1 ])
+	constructor([ id=null, name=null, wc=0, icon=null, type=1, gold=0 ])
 	{
 		this.id = id;
 		this.name = name;
@@ -12,6 +12,7 @@ class Sprinter {
 		this.icon = icon ? icon : this.getRandomIcon();
 		/* 1 is use wordcount. 2 is use minutes*/
 		this.type = type ? parseInt(type) : 1;
+		this.gold = parseInt(gold);
 		this.sprintWc = 0;
 		this.startWc = 0;
 		this.joined = false;
@@ -35,6 +36,14 @@ class Sprinter {
 	setType(type){
 		this.type = TYPES[type];
 	}
+
+	/**
+	 * @param int gold
+	 */
+	addGold(gold)
+	{
+		this.gold += gold;
+    }
 
 	/**
 	 * @param {any} wc
@@ -86,7 +95,7 @@ class Sprinter {
 	*/
 	toArray()
 	{
-		return [this.id, this.name, this.wordcount, this.icon, this.type];
+		return [this.id, this.name, this.wordcount, this.icon, this.type, this.gold];
 	}
 }
 

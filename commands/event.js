@@ -5,6 +5,7 @@ const { google } = require('googleapis');
 const Enemy = require('./event/enemy');
 const SprintManager = require('./event/SprintManager');
 const Narrative = require('./event/narrative');
+const Choice = require('./event/choice');
 
 const MOD_ROLE_ID = '635960624702029824';
 const WARRIOR_ROLE_ID = '694788170927046677';
@@ -34,9 +35,10 @@ const DUNGEONS = {
 
 
 const DATA_RANGES = {
-    sprinters: 'Sprinters!A2:E',
-    enemies: 'Enemies!A2:G',
+    sprinters: 'Sprinters!A2:F',
+    enemies: 'Enemies!A2:H',
     narratives: 'Narrative!A2:F',
+    choices: 'Choices!A2:F',
     sprints: 'Sprints!A2:D'
 };
 
@@ -74,7 +76,8 @@ class Event
         /** @var array **/
         this.eventData = {
             enemies: [],
-            narratives: []
+            narratives: [],
+            choices: []
         };
         /** @var Discord **/
         this.Discord = Discord;
@@ -168,7 +171,7 @@ class Event
     */
     isSetupgButNotRunning()
     {
-        if (!this.settingUp) throw `There is no event setup yet. See ~event help.`;
+        if (this.settingUp) throw `An event is being set up.`;
         this.isNotRunning();
     }
 
@@ -300,7 +303,7 @@ class Event
         //Bind listeners for event
         SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join, cancel, leave }) =>
         {
-            this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
+            this.listeners.start.push(this.addListener(start_text, false, this.sprintInitiated));
             this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
             this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
             this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
@@ -443,6 +446,29 @@ class Event
         });
 
         if (show) this.showNarrative(narrative);
+    }
+
+    /**
+    * Get and show the next choice dialog based on conditions
+    */
+    getChoices()
+    {
+        const { choices } = this.eventData;
+        const choice = choices.find(({ shown }) => !shown);
+
+        if (!choice) return;
+
+        const test = { ...this.eventData };
+
+        console.log(test);
+
+        const conditions = choice.conditions.matchAll(/([a-z]+)=([0-9]+)/g);
+        const show = Array.from(conditions).every(([, entity, value]) =>
+        {
+            return test[entity][value - 1].shown;
+        });
+
+        if (show) this.showChoices(choice);
     }
 
     /**
@@ -591,11 +617,14 @@ class Event
         const enemiesData = this.eventData.enemies.map(enemy => enemy.toArray());
         //Map narratives data to array for spreadsheet
         const narrativesData = this.eventData.narratives.map(narrative => narrative.toArray());
+        //Map choices data to array for spreadsheet
+        const choicesData = this.eventData.choices.map(choice => choice.toArray());
 
         //update sheets on spreadsheet
         await this.updateResource('sprinters', DATA_RANGES.sprinters, sprintersData);
         await this.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
         await this.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
+        await this.updateResource('choices', DATA_RANGES.choices, choicesData).catch(e => console.log('No choices: continue'));
         await this.updateResource('sprints', DATA_RANGES.sprints, sprintsData);
     }
 
@@ -618,10 +647,33 @@ class Event
         if (currentEnemy) {
             currentEnemy.takeDamage(wordcount);
             this.showEnemy(currentEnemy, true);
-            if (currentEnemy.defeated) this.showEnemies();
+            if (currentEnemy.defeated) {
+                this.distributeGold(currentEnemy);
+                this.showEnemies();
+            }
             return;
         }
         throw `Event had already ended`;
+    }
+
+    /**
+     * Distribut gold among sprinters
+     */
+    async distributeGold(enemy)
+    {
+        if (!enemy.gold) return;
+
+        const sprinters = [...this.SprintManager.sprints
+            .filter(sprint => sprint.enemyId === enemy.id)
+            .map(({ sprinters }) => sprinters)]
+            .filter((sprinter, index, array) => array.indexOf(sprinter) === index);
+
+        //@todo check how many Sprinters are in sprinters array
+        
+        const share = Math.floor(enemy.gold / sprinters.length);
+        sprinters.forEach(sprinter => sprinter.addGold(share));
+
+        await this.sprintChannel.send(`The enemy dropped 💰 ${enemy.gold}. Shared among ${sprinters.length} warriors who took it down! 💰 ${share} a share`);
     }
 
     /**
@@ -750,6 +802,7 @@ class Event
             }
             await this.setUp();
             if (!this.dungeonRunning) this.Controller.save(message);
+            this.settingUp = false;
             return;
         }
         throw 'No spreadsheetId supplied. Try again with "~event set [google spreadsheet id]"';
@@ -787,6 +840,11 @@ class Event
         if (!this.areThereEnemiesLeft() && !this.dungeonRunning) throw `This event already took place. Reset or choose another.`;
 
         await this.getResource(Narrative, 'narratives', DATA_RANGES.narratives);
+
+        await this.getResource(Choice, 'choices', DATA_RANGES.choices).catch(e => console.log('No choices: continue setup.'));
+
+        console.log(this.eventData.choices);
+
         await this.getResource(null, 'sprinters', DATA_RANGES.sprinters);
         this.SprintManager.addMemberData(this.channel.members);
         await this.getResource(null, 'sprints', DATA_RANGES.sprints);
@@ -808,10 +866,13 @@ class Event
         const enemiesData = this.eventData.enemies.map(enemy => enemy.reset().toArray());
         //Map narratives data to array for spreadsheet
         const narrativesData = this.eventData.narratives.map(narrative => narrative.reset().toArray());
+        //Map choices data to array for spreadsheet
+        const choicesData = this.eventData.choices.map(choice => choice.reset().toArray());
 
         //update sheets on spreadsheet
         await this.updateResource('enemies', DATA_RANGES.enemies, enemiesData);
         await this.updateResource('narratives', DATA_RANGES.narratives, narrativesData);
+        await this.updateResource('choices', DATA_RANGES.choices, choicesData).catch(e=>console.log('no choices: continue'));
     }
 
     /**
@@ -969,6 +1030,55 @@ class Event
         narrative.setShown();
 
         this.sprintChannel.send(embed);
+
+        this.getChoices();
+    }
+
+    /**
+     * @param Choice
+     */
+    async showChoices(choice)
+    {
+        const nrs = ['1️⃣', '2️⃣', '3️⃣', '4️⃣'];
+        const actions = Array.from(choice.actions.matchAll(/([0-9]+)=([a-zA-Z]+):([0-9+])/g));
+
+        const message = await this.sendChoiceMessage(choice, nrs);
+
+        const filter = (reaction, user) => nrs.includes(reaction.emoji.name);
+        message.awaitReactions(filter, { time: 15000 }).then(collected =>
+        {
+            const messageReaction = collected.reduce((prev, curr) => { return prev && prev.count > curr.count ? prev : curr; });
+            const [,,entity,id] = actions[nrs.indexOf(messageReaction.emoji.name)];
+
+            const action = this.eventData[entity][id - 1];
+            this.eventData[entity].forEach((item, index) => { if (index <= id - 1) item.setShown(); });
+
+            if (entity === 'narratives') this.showNarrative(action);
+        });
+    }
+
+    /**
+     * Create and send coice embed
+     * 
+     * @param {any} choice
+     * @param {any} options
+     */
+    async sendChoiceMessage(choice, nrs)
+    {
+        const options = Array.from(choice.options.matchAll(/([0-9]+)=([a-zA-Z]+)/g));
+
+        const embed = new this.Discord.MessageEmbed()
+            .setTitle(choice.title)
+            .setDescription(choice.text)
+            .setFooter(EMBED_FOOTER.label, EMBED_FOOTER.value);
+        options.forEach(([, nr, label]) => embed.addField(nr, label, true));
+
+        const message = await this.sprintChannel.send(embed);
+        options.forEach(async ([, nr]) => await message.react(nrs[nr - 1]));
+
+        choice.setShown();
+
+        return message;
     }
 
     /**
@@ -978,10 +1088,10 @@ class Event
     {
         if (sprinters.length) {
             await this.sprintChannel.send('Our heroes:');
-            sprinters.forEach(async ({ name, icon, thumbnail, wordcount, sprintWc }) =>
+            sprinters.forEach(async ({ name, icon, thumbnail, wordcount, sprintWc, gold }) =>
             {
                 const wcDisplay = sprintWc ? `+${sprintWc} (${wordcount})` : `${wordcount}`;
-                const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wcDisplay}`, thumbnail);
+                const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wcDisplay} 💰 ${gold}`, thumbnail);
                 await this.sprintChannel.send(embed);
             });
         }
