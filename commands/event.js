@@ -303,7 +303,7 @@ class Event
         //Bind listeners for event
         SPRINT_BOTS.forEach(({ start_text, collect_start, collect_stop, writing, join, cancel, leave }) =>
         {
-            this.listeners.start.push(this.addListener(start_text, false, this.sprintInitiated));
+            this.listeners.start.push(this.addListener(start_text, true, this.sprintInitiated));
             this.listeners.cancel.push(this.addListener(cancel, true, this.sprintCanceled));
             this.listeners.col.push(this.addListener(collect_start, true, this.listenForWc));
             this.listeners.stop.push(this.addListener(collect_stop, true, this.sumbitSprintWc));
@@ -459,9 +459,6 @@ class Event
         if (!choice) return;
 
         const test = { ...this.eventData };
-
-        console.log(test);
-
         const conditions = choice.conditions.matchAll(/([a-z]+)=([0-9]+)/g);
         const show = Array.from(conditions).every(([, entity, value]) =>
         {
@@ -481,6 +478,9 @@ class Event
         const wc = match ? match[0] : 0;
 
         let { sprinter, joined } = this.getSprinter(author);
+
+        if (sprinter.startWc === 0 && wc === 'same') this.sprintChannel.send(`please use "_wc [wordcount] new" on submitting your wordcount. I have no starting wordcount in memory yet for "same".`);
+
         sprinter.setSprintStartWc(wc);
         sprinter.member.roles.add(this.warriorRole);
 
@@ -606,11 +606,11 @@ class Event
     async commit()
     {
         const totalWc = this.SprintManager.addSprint(this.getCurrentEnemy().id).getTotalWc();
-        //Map sprinter data to array for spreadsheet
-        const sprintersData = this.SprintManager.sprintersData;
 
         this.updateEnemy(totalWc);
 
+        //Map sprinter data to array for spreadsheet
+        const sprintersData = this.SprintManager.sprintersData;
         //Get Srpints data
         const sprintsData = this.SprintManager.sprintsData;
         //Map enemies data to array for spreadsheet
@@ -663,15 +663,17 @@ class Event
     {
         if (!enemy.gold) return;
 
-        const sprinters = [...this.SprintManager.sprints
+        const sprinters = this.SprintManager.sprints
             .filter(sprint => sprint.enemyId === enemy.id)
-            .map(({ sprinters }) => sprinters)]
-            .filter((sprinter, index, array) => array.indexOf(sprinter) === index);
+            .reduce((collected, { sprinters }) => { return collected.concat(sprinters) }, [])
+            .filter(({ sprinter }, index, array) =>
+            {
+                return array.findIndex(({ sprinter: s }) => s.id === sprinter.id) === index
+            });
 
-        //@todo check how many Sprinters are in sprinters array
         
         const share = Math.floor(enemy.gold / sprinters.length);
-        sprinters.forEach(sprinter => sprinter.addGold(share));
+        sprinters.forEach(data => data.sprinter.addGold(share));
 
         await this.sprintChannel.send(`The enemy dropped 💰 ${enemy.gold}. Shared among ${sprinters.length} warriors who took it down! 💰 ${share} a share`);
     }
@@ -803,6 +805,11 @@ class Event
             await this.setUp();
             if (!this.dungeonRunning) this.Controller.save(message);
             this.settingUp = false;
+
+            this.listeners.start.push(this.addListener(SPRINT_BOTS.start_text, true, ()=>
+            {
+                if (!this.running) this.sendFeedbackToChannel(`Use "~event start" to start current dungeon ${this.title}`, true);
+            }));
             return;
         }
         throw 'No spreadsheetId supplied. Try again with "~event set [google spreadsheet id]"';
@@ -842,8 +849,6 @@ class Event
         await this.getResource(Narrative, 'narratives', DATA_RANGES.narratives);
 
         await this.getResource(Choice, 'choices', DATA_RANGES.choices).catch(e => console.log('No choices: continue setup.'));
-
-        console.log(this.eventData.choices);
 
         await this.getResource(null, 'sprinters', DATA_RANGES.sprinters);
         this.SprintManager.addMemberData(this.channel.members);
@@ -1091,7 +1096,7 @@ class Event
             sprinters.forEach(async ({ name, icon, thumbnail, wordcount, sprintWc, gold }) =>
             {
                 const wcDisplay = sprintWc ? `+${sprintWc} (${wordcount})` : `${wordcount}`;
-                const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wcDisplay} 💰 ${gold}`, thumbnail);
+                const embed = new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ✍️ ${wcDisplay} 💰 ${gold}`, thumbnail);
                 await this.sprintChannel.send(embed);
             });
         }
