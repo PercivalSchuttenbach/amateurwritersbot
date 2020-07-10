@@ -114,6 +114,8 @@ class Event
             cancel: [],
             leave: []
         };
+        /** @var guild **/
+        this.guild = null;
         /** @var role **/
         this.warriorRole = null;
         /** @var SprintManager **/
@@ -251,6 +253,7 @@ class Event
             this.sendFeedbackToChannel('No permission to use this command.', true);
             return;
         }
+        this.guild = message.guild;
         this.warriorRole = await message.guild.roles.fetch(WARRIOR_ROLE_ID);
         //execute subcommand method. On error catch and send to channel
         //@todo remove all data on exception
@@ -335,7 +338,8 @@ class Event
     {
         if (!this.running && !this.settingUp) throw `No event to stop.`;
 
-        this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+        //this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+        this.removeWarriorRole();
 
         if (this.areThereEnemiesLeft() && this.sprintChannel) this.enemyInteraction("Yes give up. Go back were you came from. Ta-ta!");
 
@@ -344,6 +348,15 @@ class Event
         this.sendFeedbackToChannel(`Event has been stopped.`, true);
         this.Controller.clearSaved(process.env.PREFIX + 'event');
         this.Controller.clearSaved(process.env.PREFIX + 'dungeon');
+    }
+
+    /**
+     * Remove warrior role from members
+     */
+    removeWarriorRole()
+    {
+       // (await this.guild.roles.fetch(WARRIOR_ROLE_ID)).members.forEach(({ member }) => member.roles.remove(this.warriorRole));
+       this.warriorRole.members.forEach(member => member.roles.remove(this.warriorRole));
     }
 
     /**
@@ -420,7 +433,8 @@ class Event
     */
     sprintCanceled()
     {
-        this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+        //this.SprintManager.getSprinters().forEach(({ member }) => member.roles.remove(this.warriorRole));
+        this.removeWarriorRole();
         this.enemyInteraction("Giving up already? What a shame. Calls themselves writers... Go back to procrastinating!");
     }
 
@@ -558,7 +572,8 @@ class Event
         const sprinters = await this.SprintManager.getCurrentSprinters();
         this.showSprinters(sprinters.sort((a, b) => b.sprintWc - a.sprintWc));
 
-        sprinters.forEach(({ member }) => member.roles.remove(this.warriorRole));
+        //sprinters.forEach(({ member }) => member.roles.remove(this.warriorRole));
+        this.removeWarriorRole();
     }
 
     /**
