@@ -383,6 +383,15 @@ class Event
             case "flow":
                 this.testFlow();
                 break;
+            case "nextNarrative":
+                this.sprintInitiated();
+                break;
+            case "showEnemy":
+                this.sprintBegins();
+                break;
+            case "damageEnemy":
+                this.updateEnemy(parseInt(args[1]));
+                break;       
         }
     }
 
@@ -473,6 +482,7 @@ class Event
         if (!choice) return;
 
         const test = { ...this.eventData };
+
         const conditions = choice.conditions.matchAll(/([a-z]+)=([0-9]+)/g);
         const show = Array.from(conditions).every(([, entity, value]) =>
         {
@@ -664,7 +674,7 @@ class Event
             this.showEnemy(currentEnemy, true);
             if (currentEnemy.defeated) {
                 this.distributeGold(currentEnemy);
-                this.showEnemies();
+                //this.showEnemies();
             }
             return;
         }
@@ -1060,7 +1070,15 @@ class Event
     async showChoices(choice)
     {
         const nrs = ['1️⃣', '2️⃣', '3️⃣', '4️⃣'];
-        const actions = Array.from(choice.actions.matchAll(/([0-9]+)=([a-zA-Z]+):([0-9+])/g));
+        const actions = choice.actions.split(';')
+            .map(actionStr =>
+                Array.from(actionStr.matchAll(/([a-zA-Z]+):([0-9]+)(-[0-9]+)?/g))
+                    .reduce((collect, current) =>
+                    {
+                        collect[current[1]] = [current[2], current[3] ? current[3].substring(1) : current[2]];
+                        return collect;
+                    }, {})
+            );
 
         const message = await this.sendChoiceMessage(choice, nrs);
 
@@ -1068,15 +1086,28 @@ class Event
         message.awaitReactions(filter, { time: 15000 }).then(collected =>
         {
             const messageReaction = collected.reduce((prev, curr) => { return prev && prev.count > curr.count ? prev : curr; });
-            const [,,entity,id] = actions[nrs.indexOf(messageReaction.emoji.name)];
+            const index = nrs.indexOf(messageReaction.emoji.name);
 
-            actions.forEach(([, , aEntity, aId]) => { if (id !== aId) this.eventData[entity][aId - 1].setShown(); });
-            this.eventData[entity].forEach((item, index) => { if (index <= id - 1) item.setShown(); });
+            //Loop through actions corrosponding to the options
+            actions.forEach((action, i) =>
+            {
+                //skip selected option
+                if (i !== index) {
+                    for (let label in action) {
+                        //set everything to shown of the no chosen options
+                        let [start, end] = action[label];
+                        for (var c = 0; c <= end - start; c++) {
+                            this.eventData[label][start - 1 + c].setShown();
+                        }
+                    }
+                }
+            });
 
-            const action = this.eventData[entity][id - 1];
-
-
-            if (entity === 'narratives') this.showNarrative(action);
+            const action = actions[index];
+            if ('narratives' in action) {
+                const narrative = this.eventData['narratives'][ action['narratives'][0] - 1 ];
+                this.showNarrative(narrative);
+            }
         });
     }
 
@@ -1088,7 +1119,7 @@ class Event
      */
     async sendChoiceMessage(choice, nrs)
     {
-        const options = Array.from(choice.options.matchAll(/([0-9]+)=([a-zA-Z]+)/g));
+        const options = Array.from(choice.options.matchAll(/([0-9]+)=([a-zA-Z ]+)/g));
 
         const embed = new this.Discord.MessageEmbed()
             .setTitle(choice.title)
@@ -1130,9 +1161,9 @@ class Event
         if (!sprinters.length) return this.sendFeedbackToChannel('No sprinters have sprinted yet', true);
 
         const totalWritten = this.SprintManager.totalWc;
-        const embeds = sprinters.map(({ name, icon, thumbnail, wordcount, numSprints, highestWc }) =>
+        const embeds = sprinters.map(({ name, icon, thumbnail, wordcount, numSprints, highestWc, gold }) =>
         {
-            return new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ${wordcount}`, thumbnail)
+            return new this.Discord.MessageEmbed().setAuthor(`${name} ${icon} — ✍️ ${wordcount} 💰 ${gold}`, thumbnail)
                 .setDescription(`**Sprint count:** ${numSprints} \u200B \u200B **Highest sprint wc:** ${highestWc}`);
         });
         await this.sprintChannel.send('**Stats:**');

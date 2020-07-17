@@ -43,6 +43,15 @@ class Enemy {
 	setShown()
 	{
 		this.defeated = 1;
+		this.health = 0;
+	}
+
+	/**
+	 * @param int
+	 * */
+	getShown()
+	{
+		return this.defeated;
     }
 
 	/**
