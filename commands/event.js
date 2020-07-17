@@ -1083,7 +1083,7 @@ class Event
         const message = await this.sendChoiceMessage(choice, nrs);
 
         const filter = (reaction, user) => nrs.includes(reaction.emoji.name);
-        message.awaitReactions(filter, { time: 15000 }).then(collected =>
+        message.awaitReactions(filter, { time: 30000 }).then(collected =>
         {
             const messageReaction = collected.reduce((prev, curr) => { return prev && prev.count > curr.count ? prev : curr; });
             const index = nrs.indexOf(messageReaction.emoji.name);
