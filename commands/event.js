@@ -1091,13 +1091,19 @@ class Event
             //Loop through actions corrosponding to the options
             actions.forEach((action, i) =>
             {
-                //skip selected option
-                if (i !== index) {
-                    for (let label in action) {
-                        //set everything to shown of the no chosen options
-                        let [start, end] = action[label];
+                for (let label in action) {
+                    //set everything to shown of the not chosen options
+                    let [start, end] = action[label];
+                    //if not selected index mark all as shown
+                    if (i !== index) {
                         for (var c = 0; c <= end - start; c++) {
                             this.eventData[label][start - 1 + c].setShown();
+                        }
+                    }
+                    //if selected index then set all before as shown
+                    else {
+                        for (var c = 0; c < start - 1; c++) {
+                            this.eventData[label][c].setShown();
                         }
                     }
                 }
