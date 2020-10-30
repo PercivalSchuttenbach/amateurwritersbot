@@ -2,7 +2,7 @@ const fs = require('fs');
 const {google} = require('googleapis');
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets','https://www.googleapis.com/auth/drive'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
@@ -51,16 +51,17 @@ class GoogleApi {
 	 * @param {getEventsCallback} callback The callback for the authorized client.
 	 */
 	static async getNewToken(oAuth2Client, callback) {
-		if(!process.env.GOOGLE_CODE)
+		const authUrl = oAuth2Client.generateAuthUrl({
+			access_type: 'offline',
+			scope: SCOPES,
+		});
+
+		if (!process.env.GOOGLE_CODE)
 		{
 			console.log('Authorize this app by visiting this url:', authUrl);
 			throw `Ask Percy to authenticate with Google.`;
 		}
 
-		const authUrl = oAuth2Client.generateAuthUrl({
-			access_type: 'offline',
-			scope: SCOPES,
-		});
 		this.getToken(oAuth2Client, callback);
 	}
 

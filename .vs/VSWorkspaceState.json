@@ -3,8 +3,9 @@
     "",
     "\\app",
     "\\commands",
-    "\\commands\\event"
+    "\\commands\\event",
+    "\\models"
   ],
-  "SelectedNode": "\\commands\\event\\narrative.js",
+  "SelectedNode": "\\commands\\event.js",
   "PreviewInSolutionExplorer": false
 }

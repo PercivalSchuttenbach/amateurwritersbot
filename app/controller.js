@@ -121,7 +121,7 @@ class Controller {
 	validate({content, channel})
 	{
 		//commpand prefix needs to be in message; if debug enabled we need to be in debug channel
-		return content.indexOf(this.prefix) == 0 && (!DEBUG || DEBUG_CHANNELS.includes(channel.id));
+		return content.indexOf(this.prefix) == 0 && (!DEBUG || DEBUG_CHANNELS.includes(channel.id) || channel.type === 'dm');
 	}
 
 	/**

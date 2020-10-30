@@ -19,6 +19,7 @@ class Sprinter {
 		this.thumbnail = null;
 		this.member = null;
 		this.sprints = [];
+		this.user = null;
 	}
 
 	/**

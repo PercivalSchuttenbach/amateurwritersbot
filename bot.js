@@ -8,14 +8,27 @@ const Memory = require('./app/memory');
 const Client = new Discord.Client();
 const Controller = require('./app/controller');
 
-Controller.set({ Discord, Logger, Memory, Client });
+const ResourceManager = require('./models/ResourceManager.js');
+const UserManagerClass = require('./models/UserManager.js');
 
-Client.on("message", Controller.handle.bind(Controller));
+async function init()
+{
+    await ResourceManager.authenticateWithGoogle();
+    const UserManager = new UserManagerClass(ResourceManager);
+    await UserManager.getUsers();
 
-Client.on('ready', ()=>{
-    //set Status for bot
-    Client.user.setActivity('OG: ~help', { type: 'WATCHING' });
-    if (!parseInt(process.env.DEBUG)) Controller.restore.bind(Controller).call();
-});
+    Controller.set({ Discord, Logger, Memory, Client, UserManager, ResourceManager });
 
-Client.login(process.env.CLIENT_TOKEN);
+    Client.on("message", Controller.handle.bind(Controller));
+
+    Client.on('ready', () =>
+    {
+        //set Status for bot
+        Client.user.setActivity('OG: ~help', { type: 'WATCHING' });
+        if (!parseInt(process.env.DEBUG)) Controller.restore.bind(Controller).call();
+    });
+
+    Client.login(process.env.CLIENT_TOKEN);
+}
+
+init();
