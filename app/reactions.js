@@ -30,6 +30,7 @@ class Reactions
                 this.jail.push({ member, timestamp: Date.now() + TIMEOUT });
                 this.startTicker();
                 messageReaction.message.reactions.cache.get(BONK_EMOJI).remove().catch(error => console.error('Failed to remove reactions: ', error));
+                messageReaction.message.channel.send(`${member} off to horny jail (#nsfw) with you.`);
             } catch (e) { console.log(e); }
         }
     }
