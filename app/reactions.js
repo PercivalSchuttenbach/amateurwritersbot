@@ -29,7 +29,7 @@ class Reactions
                 member.roles.add(this.bonkRole);
                 this.jail.push({ member, timestamp: Date.now() + TIMEOUT });
                 this.startTicker();
-                messageReaction.remove();
+                messageReaction.message.reactions.cache.get(BONK_EMOJI).remove().catch(error => console.error('Failed to remove reactions: ', error));
             } catch (e) { console.log(e); }
         }
     }
