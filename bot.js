@@ -7,6 +7,7 @@ const Logger = require('./app/logger');
 const Memory = require('./app/memory');
 const Client = new Discord.Client();
 const Controller = require('./app/controller');
+const Reactions = require('./app/reactions');
 
 const ResourceManager = require('./models/ResourceManager.js');
 const UserManagerClass = require('./models/UserManager.js');
@@ -17,9 +18,14 @@ async function init()
     const UserManager = new UserManagerClass(ResourceManager);
     await UserManager.getUsers();
 
-    Controller.set({ Discord, Logger, Memory, Client, UserManager, ResourceManager });
+    let resources = { Discord, Logger, Memory, Client, UserManager, ResourceManager };
+
+    Controller.set(resources);
+    Reactions.set(resources);
 
     Client.on("message", Controller.handle.bind(Controller));
+    Client.on("messageReactionAdd", Reactions.handle.bind(Reactions));
+    Client.on("messageReactionRemove", Reactions.handle.bind(Reactions));
 
     Client.on('ready', () =>
     {
