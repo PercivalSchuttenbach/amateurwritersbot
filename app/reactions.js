@@ -27,7 +27,7 @@ class Reactions
             const guildMember = await messageReaction.message.guild.members.fetch(messageReaction.message.author);
             if (this.jail.find(({ member }) => member.id === guildMember.id)) return;
             try {
-                member.roles.add(this.bonkRole);
+                guildMember.roles.add(this.bonkRole);
                 this.jail.push({ member: guildMember, timestamp: Date.now() + TIMEOUT });
                 this.startTicker();
                 messageReaction.remove();
