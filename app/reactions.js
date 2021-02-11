@@ -25,7 +25,7 @@ class Reactions
         if (messageReaction && messageReaction.emoji.id === BONK_EMOJI && messageReaction.count >= BONKS) {
             //messageReaction.message.member.roles.add(this.bonkRole);
             const guildMember = await messageReaction.message.guild.members.fetch(messageReaction.message.author);
-            if (this.jail.find(({ member }) => member.id === guildMember.id)) return;
+            //if (this.jail.find(({ member }) => member.id === guildMember.id)) return;
             try {
                 guildMember.roles.add(this.bonkRole);
                 this.jail.push({ member: guildMember, timestamp: Date.now() + TIMEOUT });
