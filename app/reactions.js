@@ -22,7 +22,7 @@ class Reactions
         if (messageReaction && !this.bonkRole) {
             this.bonkRole = await messageReaction.message.guild.roles.fetch(BONK_ROLE_ID);
         }
-        if (messageReaction && messageReaction.emoji.id === BONK_EMOJI && messageReaction.count === BONKS) {
+        if (messageReaction && messageReaction.emoji.id === BONK_EMOJI && messageReaction.count >= BONKS) {
             //messageReaction.message.member.roles.add(this.bonkRole);
             const member = await messageReaction.message.guild.members.fetch(messageReaction.message.author);
             try {
