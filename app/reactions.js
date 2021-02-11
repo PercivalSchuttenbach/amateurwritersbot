@@ -2,7 +2,7 @@ const DEBUG = parseInt(process.env.DEBUG);
 const DEBUG_CHANNELS = JSON.parse(process.env.CHANNEL_DEBUG);
 const BONK_ROLE_ID = "809364853151367189";
 const TIMEOUT = 1000 * 60 * 10;
-const BONKS = 1;
+const BONKS = 5;
 const TICKER = 60000;
 const BONK_EMOJI = "808730952381497374";
 
