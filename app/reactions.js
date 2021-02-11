@@ -24,11 +24,10 @@ class Reactions
         }
         if (messageReaction && messageReaction.emoji.id === BONK_EMOJI && messageReaction.count >= BONKS) {
             //messageReaction.message.member.roles.add(this.bonkRole);
-            const guildMember = await messageReaction.message.guild.members.fetch(messageReaction.message.author);
-            //if (this.jail.find(({ member }) => member.id === guildMember.id)) return;
+            const member = await messageReaction.message.guild.members.fetch(messageReaction.message.author);
             try {
-                guildMember.roles.add(this.bonkRole);
-                this.jail.push({ member: guildMember, timestamp: Date.now() + TIMEOUT });
+                member.roles.add(this.bonkRole);
+                this.jail.push({ member, timestamp: Date.now() + TIMEOUT });
                 this.startTicker();
                 messageReaction.remove();
             } catch (e) { console.log(e); }
@@ -42,7 +41,7 @@ class Reactions
 
     checkJail()
     {
-        this.jail.forEach(({ member, message, timestamp }, index, array) =>
+        this.jail.forEach(({ member, timestamp }, index, array) =>
         {
             if (Date.now() > timestamp) {
                 member.roles.remove(this.bonkRole);
