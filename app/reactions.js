@@ -2,7 +2,7 @@ const DEBUG = parseInt(process.env.DEBUG);
 const DEBUG_CHANNELS = JSON.parse(process.env.CHANNEL_DEBUG);
 const BONK_ROLE_ID = "809364853151367189";
 const TIMEOUT = 1000 * 60 * 10;
-const BONKS = 5;
+const BONKS = 1;
 const TICKER = 60000;
 const BONK_EMOJI = "808730952381497374";
 
@@ -17,21 +17,60 @@ class Reactions
         this.bonkRole = null;
     }
 
+    /**
+     * Handle MessageReactionAdd
+     * @param {any} messageReaction
+     * @param {any} user
+     */
     async handle(messageReaction, user)
     {
-        if (messageReaction && !this.bonkRole) {
-            this.bonkRole = await messageReaction.message.guild.roles.fetch(BONK_ROLE_ID);
-        }
-        if (messageReaction && messageReaction.emoji.id === BONK_EMOJI && messageReaction.count >= BONKS) {
-            //messageReaction.message.member.roles.add(this.bonkRole);
-            const member = await messageReaction.message.guild.members.fetch(messageReaction.message.author);
+        //if there is no messageReaction, then there is nothing to handle
+        if (!messageReaction) return;
+
+        if (messageReaction.emoji.id === BONK_EMOJI && messageReaction.count >= BONKS) {
+            const bonkRole = await this.getBonkRole(messageReaction.message.guild);
+            //get member from Guild members by message author
+            const member = await this.getMemberFromMessageReaction(messageReaction);
             try {
-                member.roles.add(this.bonkRole);
+                member.roles.add(bonkRole);
                 this.jail.push({ member, timestamp: Date.now() + TIMEOUT });
                 this.startTicker();
-                messageReaction.message.reactions.cache.get(BONK_EMOJI).remove().catch(error => console.error('Failed to remove reactions: ', error));
+                this.removeBonkReactionFromMessage(messageReaction);
+                this.sendMessageToReactionChannel(messageReaction);
             } catch (e) { console.log(e); }
         }
+    }
+
+    /**
+     * @param {any} messageReaction
+     * @return GuildMember
+     */
+    async getMemberFromMessageReaction(messageReaction)
+    {
+        const member = await messageReaction.message.guild.members.fetch(messageReaction.message.author);
+        return member;
+    }
+
+    /**
+     * @param {any} messageReaction
+     */
+    removeBonkReactionFromMessage(messageReaction)
+    {
+        messageReaction.message.reactions.cache.get(BONK_EMOJI).remove().catch(error => console.error('Failed to remove reactions: ', error));
+    }
+
+    /*
+     * get BonkRole from guild
+     * @param MessageReaction
+     * @return GuildRole
+     */ 
+    async getBonkRole(guild)
+    {
+        //fet bonk role from the message reaction
+        if (!this.bonkRole) {
+            this.bonkRole = await guild.roles.fetch(BONK_ROLE_ID);
+        }
+        return this.bonkRole;
     }
 
     startTicker()
@@ -39,6 +78,9 @@ class Reactions
         setTimeout(this.checkJail.bind(this), TICKER);
     }
 
+    /**
+     * Check if jail array has members; iterate over them and remove role were timeout has expired
+     * */
     checkJail()
     {
         this.jail.forEach(({ member, timestamp }, index, array) =>
@@ -51,11 +93,28 @@ class Reactions
         if (this.jail.length) this.startTicker();
     }
 
+    /**
+     * @param {any} messageReaction
+     */
+    sendMessageToReactionChannel({message})
+    {
+        message.channel.send(`${message.author} off to Horny Jail with you! <:bonk:808730952381497374>`);
+    }
+
     set({ Discord, Client})
     {
         this.Discord = Discord;
         this.Client = Client;
 
+        this.bindOnRaw();
+    }
+
+    /**
+     * Emit MessageReactionAdd and MessageReactionRemove on uncached messages
+     */
+    bindOnRaw()
+    {
+        const Client = this.Client;
         //Make sure all mesages are checked
         Client.on('raw', async (packet) =>
         {

@@ -25,7 +25,6 @@ async function init()
 
     Client.on("message", Controller.handle.bind(Controller));
     Client.on("messageReactionAdd", Reactions.handle.bind(Reactions));
-    Client.on("messageReactionRemove", Reactions.handle.bind(Reactions));
 
     Client.on('ready', () =>
     {
