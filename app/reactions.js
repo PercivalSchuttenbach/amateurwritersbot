@@ -98,7 +98,7 @@ class Reactions
      */
     sendMessageToReactionChannel({message})
     {
-        message.channel.send(`${message.author} off to Horny Jail with you! <:bonk:808730952381497374>`);
+        message.channel.send(`${message.author} off to the Corner of Shame with you! <:bonk:808730952381497374>`);
     }
 
     set({ Discord, Client})

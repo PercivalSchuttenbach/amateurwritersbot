@@ -4,8 +4,10 @@
     "\\app",
     "\\commands",
     "\\commands\\event",
-    "\\models"
+    "\\models",
+    "\\_archived\\commands",
+    "\\_archived\\experiments"
   ],
-  "SelectedNode": "\\commands\\tools.js",
+  "SelectedNode": "\\commands\\event.js",
   "PreviewInSolutionExplorer": false
 }
