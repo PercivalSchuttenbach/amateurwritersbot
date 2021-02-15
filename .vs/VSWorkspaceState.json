@@ -4,9 +4,7 @@
     "\\app",
     "\\commands",
     "\\commands\\event",
-    "\\models",
-    "\\_archived\\commands",
-    "\\_archived\\experiments"
+    "\\models"
   ],
   "SelectedNode": "\\commands\\event.js",
   "PreviewInSolutionExplorer": false

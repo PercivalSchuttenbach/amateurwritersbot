@@ -889,9 +889,11 @@ class Event
     {
         this.SprintManager.getSprinters().forEach(sprinter =>
         {
-            let user = this.UserManager.get(sprinter.id);
-            user.sprinter = sprinter;
-            sprinter.user = user;
+            let user = this.UserManager.getUser(sprinter.id);
+            if (user) {
+                user.sprinter = sprinter;
+                sprinter.user = user;
+            }
         });
     }
 
