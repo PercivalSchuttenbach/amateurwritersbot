@@ -731,6 +731,12 @@ class Event
         }
         let { sprinter } = this.getSprinter(message.author);
         sprinter.setType(args[0]);
+
+        //Map sprinter data to array for spreadsheet
+        const sprintersData = this.SprintManager.sprintersData;
+        //update sheet on spreadsheet
+        await this.updateResource('sprinters', DATA_RANGES.sprinters, sprintersData);
+
         this.sendFeedbackToChannel(`Your sprint type has been set to ${args[0] === 'm' ? 'minutes' : 'wordcount'}`, true);
     }
 
