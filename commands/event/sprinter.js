@@ -51,7 +51,7 @@ class Sprinter {
 	 */
 	setSprintStartWc(wc)
 	{
-		this.startWc = wc === 'same' ? this.startWc : parseInt(wc);
+		this.startWc = wc === 'same' || wc === '_=' ? this.startWc : parseInt(wc);
 		this.joined = true;
     }
 
@@ -60,12 +60,8 @@ class Sprinter {
 	**/
 	setSprintWc(wordcount, newFlag)
 	{
-		console.log(`old this.startWc ${this.startWc}`);
 		this.startWc = (newFlag !== undefined || !this.joined) ? 0 : this.startWc;
-		console.log(`new this.startWc ${this.startWc}`);
 		let wc = parseInt(wordcount) - this.startWc;
-		console.log(`new wc ${wc}`);
-		this.startWc += wc;
 		this.sprintWc = this.type === 1 ? wc : (wc * MULTIPLIER);
 	}
 
@@ -87,6 +83,7 @@ class Sprinter {
 	commit()
 	{
 		this.wordcount += this.sprintWc;
+		this.startWc += this.sprintWc;
 		this.sprintWc = 0;
 		this.joined = false;
 	}

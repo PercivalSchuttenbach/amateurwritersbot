@@ -45,7 +45,7 @@ const DATA_RANGES = {
 const SPRINT_BOTS = [
     {
         start_text: "JOIN THE SPRINT",
-        join: /^_join/i,
+        join: /^_join|_=/i,
         collect_start: "TIME'S UP",
         wc_text: /^_wc\s+\d+/i,
         collect_stop: "CONGRATS EVERYONE",
@@ -500,12 +500,13 @@ class Event
      */
     joinSprint({ content, author })
     {
-        const match = content.match(/(\d+|same)/);
+        const match = content.match(/(\d+|same|_=)/);
         const wc = match ? match[0] : 0;
 
         let { sprinter, joined } = this.getSprinter(author);
 
-        if (sprinter.startWc === 0 && wc === 'same') this.sprintChannel.send(`please use "_wc [wordcount] new" on submitting your wordcount. I have no starting wordcount in memory yet for "same".`);
+        //Before the event has been run some sprinters already have sprinted and are using same. The bot does not have same in memory yet
+        if (sprinter.startWc === 0 && (wc === 'same' || wc === '_=')) this.sprintChannel.send(`${author} please use "_wc [wordcount] new" on submitting your wordcount. I have no starting wordcount in memory yet for "same".`);
 
         sprinter.setSprintStartWc(wc);
         sprinter.member.roles.add(this.warriorRole);
@@ -565,7 +566,7 @@ class Event
             const [, wordcount, newFlag] = match;
             let { sprinter } = this.getSprinter(author);
             sprinter.setSprintWc(wordcount, newFlag);
-            this.sprintChannel.send(`${author.username}: ${wordcount} ${newFlag ? newFlag : ''}`);
+            this.sprintChannel.send(`${author.username}: ${wordcount} (**${sprinter.sprintWc}** new)`);
         }
     }
 
