@@ -33,6 +33,7 @@ class Reactions
         const member = await this.getMemberFromMessageReaction(messageReaction);
 
         if (messageReaction.emoji.id === BONK_EMOJI && messageReaction.count >= BONKS) {
+            this.removeBonkReactionFromMessage(messageReaction);
             if (this.incrementJailTime(member, messageReaction)) return;
             this.addToJail(messageReaction, member);
         }
@@ -113,10 +114,9 @@ class Reactions
      * @param {any} index
      * @param {any} array
      */
-    removeMemberFromJail({ member, timestamp, messageReaction }, index, array)
+    removeMemberFromJail({ member, timestamp }, index, array)
     {
         if (Date.now() > timestamp) {
-            this.removeBonkReactionFromMessage(messageReaction);
             member.roles.remove(this.bonkRole);
             array.splice(index, 1);
         }
