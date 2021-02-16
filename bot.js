@@ -24,7 +24,7 @@ async function init()
     Reactions.set(resources);
 
     Client.on("message", Controller.handle.bind(Controller));
-    //Client.on("messageReactionAdd", Reactions.handle.bind(Reactions));
+    Client.on("messageReactionAdd", Reactions.handle.bind(Reactions));
 
     Client.on('ready', () =>
     {

@@ -15,6 +15,7 @@ class Reactions
         this.Client = null;
         this.jail = [];
         this.bonkRole = null;
+        this.ticker = null;
     }
 
     /**
@@ -66,16 +67,20 @@ class Reactions
      */ 
     async getBonkRole(guild)
     {
-        //fet bonk role from the message reaction
+        //get bonk role from the message reaction
         if (!this.bonkRole) {
             this.bonkRole = await guild.roles.fetch(BONK_ROLE_ID);
         }
         return this.bonkRole;
     }
 
+    /*
+     * Check every N seconds if members can be let out of jail
+     */
     startTicker()
     {
-        setTimeout(this.checkJail.bind(this), TICKER);
+        if (this.ticker) return;
+        this.ticker = setTimeout(this.checkJail.bind(this), TICKER);
     }
 
     /**
@@ -90,6 +95,7 @@ class Reactions
                 array.splice(index, 1);
             }
         });
+        clearTimeout(this.ticker);
         if (this.jail.length) this.startTicker();
     }
 
