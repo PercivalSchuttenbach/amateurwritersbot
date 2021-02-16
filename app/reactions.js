@@ -25,8 +25,12 @@ class Reactions
      */
     async handle(messageReaction, user)
     {
+        console.log(messageReaction);
         //if there is no messageReaction, then there is nothing to handle
         if (!messageReaction) return;
+
+        console.log(messageReaction.emoji.id);
+        console.log(BONKS);
 
         if (messageReaction.emoji.id === BONK_EMOJI && messageReaction.count >= BONKS) {
             const bonkRole = await this.getBonkRole(messageReaction.message.guild);
