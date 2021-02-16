@@ -1,10 +1,11 @@
 const DEBUG = parseInt(process.env.DEBUG);
 const DEBUG_CHANNELS = JSON.parse(process.env.CHANNEL_DEBUG);
 const BONK_ROLE_ID = "809364853151367189";
-const TIMEOUT = 1000 * 60 * 10;
-const BONKS = 5;
+const TIMEOUT = 1000 * 60 * (DEBUG ? 1 : 10);
+const INCREMENT = 1000 * 60 * (DEBUG ? 1 : 5);
+const BONKS = DEBUG ? 1: 5;
 const TICKER = 60000;
-const BONK_EMOJI = "808730952381497374";
+const BONK_EMOJI = DEBUG ? "647524411729117195" : "808730952381497374";/*debug is block emoji*/
 
 class Reactions
 {
@@ -29,21 +30,41 @@ class Reactions
         //if there is no messageReaction, then there is nothing to handle
         if (!messageReaction) return;
 
-        console.log(messageReaction.emoji.id);
-        console.log(BONKS);
+        const member = await this.getMemberFromMessageReaction(messageReaction);
 
         if (messageReaction.emoji.id === BONK_EMOJI && messageReaction.count >= BONKS) {
-            const bonkRole = await this.getBonkRole(messageReaction.message.guild);
-            //get member from Guild members by message author
-            const member = await this.getMemberFromMessageReaction(messageReaction);
-            try {
-                member.roles.add(bonkRole);
-                this.jail.push({ member, timestamp: Date.now() + TIMEOUT });
-                this.startTicker();
-                this.removeBonkReactionFromMessage(messageReaction);
-                this.sendMessageToReactionChannel(messageReaction);
-            } catch (e) { console.log(e); }
+            if (this.incrementJailTime(member, messageReaction)) return;
+            this.addToJail(messageReaction, member);
         }
+    }
+
+    /**
+     * @param {any} guildmember
+     */
+    incrementJailTime(guildmember, { message })
+    {
+        const jailed = this.jail.find(({ member }) => member.id === guildmember.id);
+        if (jailed) {
+            jailed.timestamp += INCREMENT;
+            let timeleft = Math.ceil((jailed.timestamp - Date.now()) / 60000);
+            message.channel.send(`${message.author} shame time increased! <:bonk:808730952381497374>. Time remaining: ${timeleft} minutes.`);
+        }
+        return jailed;
+    }
+
+    /**
+     * @param {any} messageReaction
+     * @param {any} member
+     */
+    async addToJail(messageReaction, member)
+    {
+        const bonkRole = await this.getBonkRole(messageReaction.message.guild);
+        try {
+            member.roles.add(bonkRole);
+            this.jail.push({ member, timestamp: Date.now() + TIMEOUT, messageReaction });
+            this.startTicker();
+            this.sendMessageToReactionChannel(messageReaction);
+        } catch (e) { console.log(e); }
     }
 
     /**
@@ -88,19 +109,29 @@ class Reactions
     }
 
     /**
+     * @param {any} param0
+     * @param {any} index
+     * @param {any} array
+     */
+    removeMemberFromJail({ member, timestamp, messageReaction }, index, array)
+    {
+        if (Date.now() > timestamp) {
+            this.removeBonkReactionFromMessage(messageReaction);
+            member.roles.remove(this.bonkRole);
+            array.splice(index, 1);
+        }
+    }
+
+    /**
      * Check if jail array has members; iterate over them and remove role were timeout has expired
      * */
     checkJail()
     {
-        this.jail.forEach(({ member, timestamp }, index, array) =>
-        {
-            if (Date.now() > timestamp) {
-                member.roles.remove(this.bonkRole);
-                array.splice(index, 1);
-            }
-        });
         clearTimeout(this.ticker);
         this.ticker = null;
+
+        this.jail.forEach(this.removeMemberFromJail.bind(this));
+
         if (this.jail.length) this.startTicker();
     }
 
