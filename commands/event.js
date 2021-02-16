@@ -637,6 +637,8 @@ class Event
 
         this.updateEnemy(totalWc);
 
+        //this.UserManager.commit();
+
         //Map sprinter data to array for spreadsheet
         const sprintersData = this.SprintManager.sprintersData;
         //Get Srpints data
@@ -887,7 +889,8 @@ class Event
         await this.getResource(null, 'sprinters', DATA_RANGES.sprinters);
         this.SprintManager.addMemberData(this.channel.members);
         await this.getResource(null, 'sprints', DATA_RANGES.sprints);
-        this.combineUsersSprinters();
+        
+        //this.combineUsersSprinters();
 
         await this.sendFeedbackToChannel(`Event ${this.title} has been setUp! Start with "~event start" and use one of the Sprint bots =)`);
     }
@@ -896,10 +899,11 @@ class Event
     {
         this.SprintManager.getSprinters().forEach(sprinter =>
         {
-            let user = this.UserManager.getUser(sprinter.id);
+            let user = this.UserManager.getUserBySprinter(sprinter);
             if (user) {
                 user.sprinter = sprinter;
                 sprinter.user = user;
+                sprinter.gold = user.gold;
             }
         });
     }

@@ -1,24 +1,29 @@
 class User
 {
 
-	constructor(index, data)
+	constructor([ id=null, name=null, written=0, sprints=0, xp=0, gold=0])
 	{
-		this.index = index;
-		this.id = data[0];
-		this.sheetName = data[1];
-		this.totalWritten = data[2];
-		this.xp = data[3];
-		this.gold = data[4];
-		this.changed = false;
+		this.id = id;
+		this.name = name;
+		this.written = written;
+		this.sprints = sprints;
+		this.xp = xp;
+		this.gold = gold;
 		this.sprinter = null;
 	}
+
+	update()
+	{
+
+    }
 
 	toArray()
 	{
 		return [
 			this.id,
-			this.sheetName,
-			this.totalWritten,
+			this.name,
+			this.written,
+			this.sprints,
 			this.xp,
 			this.gold,
 		];

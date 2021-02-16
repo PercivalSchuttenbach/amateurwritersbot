@@ -86,6 +86,28 @@ class ResourceManager
     }
 
     /**
+    * Update spreadsheet
+    *
+    * @param string
+    * @param string
+    * @param Object
+    **/
+    async update(spreadsheetId, dataRange, data)
+    {
+        //this.sendFeedbackToChannel(`Updating ${label}.`);
+
+        //Try to retrieve the data from the spreadsheet
+        let response = {};
+        try {
+            const request = { spreadsheetId, range: dataRange, valueInputOption: 'RAW', resource: { values: data } };
+            response = (await this.sheets.spreadsheets.values.update(request));
+        } catch (err) {
+            throw `Could not update ${err}.`;
+        }
+        return;
+    }
+
+    /**
      * Insert a new permission.
      *
      * @param { String } fileId ID of the file to insert permission for.

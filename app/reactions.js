@@ -55,7 +55,7 @@ class Reactions
     /**
      * @param {any} messageReaction
      */
-    removeBonkReactionFromMessage(messageReaction)
+    async removeBonkReactionFromMessage(messageReaction)
     {
         messageReaction.message.reactions.cache.get(BONK_EMOJI).remove().catch(error => console.error('Failed to remove reactions: ', error));
     }
@@ -96,6 +96,7 @@ class Reactions
             }
         });
         clearTimeout(this.ticker);
+        this.ticker = null;
         if (this.jail.length) this.startTicker();
     }
 
