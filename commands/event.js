@@ -479,6 +479,9 @@ class Event
     getChoices()
     {
         const { choices } = this.eventData;
+
+        if (!choices) return;
+
         const choice = choices.find(({ shown }) => !shown);
 
         if (!choice) return;

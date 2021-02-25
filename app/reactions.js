@@ -26,7 +26,6 @@ class Reactions
      */
     async handle(messageReaction, user)
     {
-        console.log(messageReaction);
         //if there is no messageReaction, then there is nothing to handle
         if (!messageReaction) return;
 
