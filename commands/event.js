@@ -501,12 +501,12 @@ class Event
      * @param Message
      * @return void
      */
-    joinSprint({ content, author })
+    joinSprint({ content, author, member })
     {
         const match = content.match(/(\d+|same|_=)/);
         const wc = match ? match[0] : 0;
 
-        let { sprinter, joined } = this.getSprinter(author);
+        let { sprinter, joined } = this.getSprinter(author, member);
 
         //Before the event has been run some sprinters already have sprinted and are using same. The bot does not have same in memory yet
         if (sprinter.startWc === 0 && (wc === 'same' || wc === '_=')) this.sprintChannel.send(`${author} please use "_wc [wordcount] new" on submitting your wordcount. I have no starting wordcount in memory yet for "same".`);
@@ -749,13 +749,12 @@ class Event
     /**
     * @param author
     */
-    getSprinter({ id: author_id })
+    getSprinter({ id: author_id }, member)
     {
         let sprinter = this.SprintManager.getSprinter(author_id);
         let joined = false;
         if (!sprinter) {
             //Sprinter is not in eventData yet. Add it
-            const member = this.channel.members.get(author_id);
             sprinter = this.SprintManager.addSprinter(author_id, member);
             joined = true;
         }
