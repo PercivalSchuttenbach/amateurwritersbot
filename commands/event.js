@@ -758,6 +758,9 @@ class Event
             sprinter = this.SprintManager.addSprinter(author_id, member);
             joined = true;
         }
+        if (!sprinter.member) {
+            this.SprintManager.insertMemberData(sprinter, member);
+        }
         return { sprinter, joined };
     }
 
