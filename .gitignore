@@ -85,3 +85,4 @@ typings/
 
 # env
 .envnode_modules
+npm-debug.log
