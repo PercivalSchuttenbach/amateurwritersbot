@@ -35,7 +35,7 @@ const DUNGEONS = {
 
 
 const DATA_RANGES = {
-    sprinters: 'Sprinters!A2:F',
+    sprinters: 'Sprinters!A2:G',
     enemies: 'Enemies!A2:H',
     narratives: 'Narrative!A2:F',
     choices: 'Choices!A2:F',
@@ -45,7 +45,7 @@ const DATA_RANGES = {
 const SPRINT_BOTS = [
     {
         start_text: "JOIN THE SPRINT",
-        join: /^_join|_=/i,
+        join: /^_join|_=|_same/i,
         collect_start: "TIME'S UP",
         wc_text: /^_wc\s+\d+/i,
         collect_stop: "CONGRATS EVERYONE",
@@ -407,26 +407,28 @@ class Event
 
         narratives.forEach(narrative =>
         {
-            const conditions = narrative.conditions.matchAll(/([a-z]+)=([0-9]+):?(([0-9]+)(%)?)?/g);
-            Array.from(conditions).every(([, entity, value, , value2, percentage]) =>
-            {
-                if (value2) {
-                    const enemy = test[entity][value - 1];
-                    const points = parseInt(value2);
-                    const damage = percentage ? ((100 - points) / 100) * enemy.wordcount : (points === 0 ? enemy.health : points);
-                    //show before death
-                    if (enemy.wordcount === enemy.health && enemy.health === damage) this.showEnemy(enemy);
-                    //this.sendFeedbackToChannel(`H${health} WC:${wordcount} V:${value2}`, true);
-                    enemy.takeDamage(damage);
-                    this.showEnemy(enemy);
+            if (narrative.conditions) {
+                const conditions = narrative.conditions.matchAll(/([a-z]+)=([0-9]+):?(([0-9]+)(%)?)?/g);
+                Array.from(conditions).every(([, entity, value, , value2, percentage]) =>
+                {
+                    if (value2) {
+                        const enemy = test[entity][value - 1];
+                        const points = parseInt(value2);
+                        const damage = percentage ? ((100 - points) / 100) * enemy.wordcount : (points === 0 ? enemy.health : points);
+                        //show before death
+                        if (enemy.wordcount === enemy.health && enemy.health === damage) this.showEnemy(enemy);
+                        //this.sendFeedbackToChannel(`H${health} WC:${wordcount} V:${value2}`, true);
+                        enemy.takeDamage(damage);
+                        this.showEnemy(enemy);
+                        return true;
+                    }
+                    //this.sendFeedbackToChannel(`${entity}: ${value}`, true);
+                    if (test[entity] !== value) {
+                        //decrease enemies
+                    }
                     return true;
-                }
-                //this.sendFeedbackToChannel(`${entity}: ${value}`, true);
-                if (test[entity] !== value) {
-                    //decrease enemies
-                }
-                return true;
-            });
+                });
+            }
             this.showNarrative(narrative);
         });
     }
@@ -501,7 +503,7 @@ class Event
      * @param Message
      * @return void
      */
-    joinSprint({ content, author, member })
+    async joinSprint({ content, author, member })
     {
         const match = content.match(/(\d+|same|_=)/);
         const wc = match ? match[0] : 0;
@@ -512,8 +514,15 @@ class Event
         if (sprinter.startWc === 0 && (wc === 'same' || wc === '_=')) this.sprintChannel.send(`${author} please use "_wc [wordcount] new" on submitting your wordcount. I have no starting wordcount in memory yet for "same".`);
 
         sprinter.setSprintStartWc(wc);
-        sprinter.member.roles.add(this.warriorRole);
 
+        //Map sprinter data to array for spreadsheet
+        const sprintersData = this.SprintManager.sprintersData;
+        //update sheet on spreadsheet
+        await this.updateResource('sprinters', DATA_RANGES.sprinters, sprintersData);
+
+        this.sprintChannel.send(`${author} start wordcount set to ${sprinter.startWc}.`);
+
+        sprinter.member.roles.add(this.warriorRole);
         if (joined) this.joinedTheFray(author, sprinter);
     }
 

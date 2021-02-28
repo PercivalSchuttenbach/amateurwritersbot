@@ -31,15 +31,16 @@ class SprintManager
     {
         this.sprints = rows.reduce((collect, row) =>
         {
-            const [sprint_id, enemy_id, sprinter_id, wc] = row;
+            let [sprint_id, enemy_id, sprinter_id, wc] = row;
             //If sprint does not exist yet create it
             if (!collect[sprint_id]) collect[sprint_id] = new Sprint(parseInt(sprint_id), parseInt(enemy_id));
             //Get sprinter and push spritns to own array
             const sprinter = this.sprinters.find(({ id }) => id === sprinter_id);
+            wc = parseInt(wc);
             //add sprinter to sprint with wc
-            collect[sprint_id].fill(sprinter, parseInt(wc));
-            sprinter.sprints.push({ wc: parseInt(wc), sprint: collect[sprint_id] });
-
+            collect[sprint_id].fill(sprinter, wc);
+            sprinter.sprints.push({ wc: wc, sprint: collect[sprint_id] });
+            
             this.increment = sprint_id;
             return collect;
         }, []);
