@@ -84,4 +84,4 @@ typings/
 .dynamodb/
 
 # env
-.env
+.envnode_modules
