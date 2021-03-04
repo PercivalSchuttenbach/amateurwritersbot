@@ -13,6 +13,18 @@ class Fun {
 	}
 
 	/**
+	* @param Discord.Message.content
+	* @return Object
+	*/
+	getArgs(content)
+	{
+		let args = content.slice(process.env.PREFIX.length).trim().split(/ +/g);
+		let command = args.shift().toLowerCase();
+
+		return { command, args };
+	}
+
+	/**
 	* @param Message
 	*/
 	ouulthululu({channel})
@@ -29,6 +41,30 @@ class Fun {
         this.embed.setImage((author.id == this.ouulId) ? this.imgMotivatedOuul : this.imgMotivated);
     	channel.send(this.embed);
 	}
+
+	/**
+	 * @param {any} args
+	 */
+	pluckRandomArrayItem(args)
+	{
+		let intRandom = ~~(Math.random() * args.length);
+		return args.splice(intRandom, 1);
+	}
+
+	/**
+	 * @param Message
+	 */
+	fmk({content, channel, author})
+	{
+		let fmk = {'f*':null,'marry':null,'kill':null};
+		let { args } = this.getArgs(content);
+		let output = '';
+
+		for (let i in fmk) {
+			output += `${i}: ${args.length ? this.pluckRandomArrayItem(args) : channel.members.random().nickname} `;
+		}
+		channel.send(`${author} ${output}`);
+    }
 
 }
 
