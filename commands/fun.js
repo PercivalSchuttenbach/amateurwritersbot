@@ -1,4 +1,5 @@
-class Fun {
+class Fun
+{
 
 	/**
 	* @param resources
@@ -51,17 +52,27 @@ class Fun {
 		return args.splice(intRandom, 1);
 	}
 
+	/*
+	 * @param {any} channel
+	 * @param {any} guild
+	 */
+    async getRandomMemberFromChannel(channel)
+	{
+		const member = channel.members.filter(m => !m.user.bot).random();
+		return member.nickname ? member.nickname : member.user.username;
+    }
+
 	/**
 	 * @param Message
 	 */
-	fmk({content, channel, author})
+	async fmk({content, channel, author, guild})
 	{
-		let fmk = {'f*':null,'marry':null,'kill':null};
+		let fmk = { 'Protagonist': null,'Antagonist':null,'Love interest':null};
 		let { args } = this.getArgs(content);
 		let output = '';
 
 		for (let i in fmk) {
-			output += `${i}: ${args.length ? this.pluckRandomArrayItem(args) : channel.members.random().nickname} `;
+			output += `**${i}**: ${args.length ? this.pluckRandomArrayItem(args) : (await this.getRandomMemberFromChannel(channel))} `;
 		}
 		channel.send(`${author} ${output}`);
     }

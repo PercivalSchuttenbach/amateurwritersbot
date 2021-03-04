@@ -5,7 +5,10 @@ console.log(process.version);
 const Discord = require('discord.js');
 const Logger = require('./app/logger');
 const Memory = require('./app/memory');
-const Client = new Discord.Client();
+const Intents = new Discord.Intents(Discord.Intents.NON_PRIVILEGED);
+Intents.add('GUILD_MEMBERS');
+Intents.add('GUILD_PRESENCES');
+const Client = new Discord.Client({ ws: { intents: Intents } });
 const Controller = require('./app/controller');
 const Reactions = require('./app/reactions');
 
