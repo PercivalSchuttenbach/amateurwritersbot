@@ -1,3 +1,6 @@
+const ROLES = ['791322600965013504', '791322657198440469', '791322709963178004', '795783361721270324'];
+var MEMBERS = null;
+
 class Fun
 {
 
@@ -56,9 +59,10 @@ class Fun
 	 * @param {any} channel
 	 * @param {any} guild
 	 */
-    async getRandomMemberFromChannel(channel)
+    async getRandomMemberFromChannel(channel, guild)
 	{
-		const member = channel.members.filter(m => !m.user.bot).random();
+		if (!MEMBERS) MEMBERS = await guild.members.fetch();
+		const member = MEMBERS.filter(m => !m.user.bot && m.roles.cache.find(r => ROLES.includes(r.id)) && m.presence.status == 'online').random();
 		return member.nickname ? member.nickname : member.user.username;
     }
 
@@ -72,7 +76,7 @@ class Fun
 		let output = '';
 
 		for (let i in fmk) {
-			output += `**${i}**: ${args.length ? this.pluckRandomArrayItem(args) : (await this.getRandomMemberFromChannel(channel))} `;
+			output += `**${i}**: ${args.length ? this.pluckRandomArrayItem(args) : (await this.getRandomMemberFromChannel(channel, guild))} `;
 		}
 		channel.send(`${author} ${output}`);
     }
