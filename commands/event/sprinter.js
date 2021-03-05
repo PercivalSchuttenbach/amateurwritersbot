@@ -60,9 +60,9 @@ class Sprinter {
 	**/
 	setSprintWc(wordcount, newFlag)
 	{
+		let wc = parseInt(wordcount);
 		this.startWc = (newFlag !== undefined || !this.joined) ? 0 : this.startWc;
-		let wc = parseInt(wordcount) - this.startWc;
-		this.sprintWc = this.type === 1 ? wc : (wc * MULTIPLIER);
+		this.sprintWc = (wc > 0 && wc > this.startWc) ? (this.type === 1 ? wc : wc * MULTIPLIER) - this.startWc : 0;
 	}
 
 	/* Get num sprints joined */

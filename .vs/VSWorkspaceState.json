@@ -6,6 +6,6 @@
     "\\commands\\event",
     "\\models"
   ],
-  "SelectedNode": "\\commands\\event\\sprinter.js",
+  "SelectedNode": "\\commands\\event\\SprintManager.js",
   "PreviewInSolutionExplorer": false
 }

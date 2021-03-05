@@ -45,7 +45,7 @@ const DATA_RANGES = {
 const SPRINT_BOTS = [
     {
         start_text: "JOIN THE SPRINT",
-        join: /^_join|_=|_same/i,
+        join: /^_join|^_=|^_same/i,
         collect_start: "TIME'S UP",
         wc_text: /^_wc\s+\d+/i,
         collect_stop: "CONGRATS EVERYONE",
