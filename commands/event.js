@@ -636,7 +636,7 @@ class Event
     async showBegin()
     {
         //get last shown narrative
-        const narrative = this.eventData.narratives.reverse().find(({ shown }) => shown);
+        const narrative = this.eventData.narratives.slice().reverse().find(({ shown }) => shown);
         if (narrative) await this.sprintChannel.send('> **Welcome back! The story where you last left off:**');
         //show first if there is no last shown narrative
         await this.showNarrative(narrative ? narrative : this.eventData.narratives[0]);
