@@ -635,7 +635,11 @@ class Event
     **/
     async showBegin()
     {
-        await this.showNarrative(this.eventData.narratives[0]);
+        //get last shown narrative
+        const narrative = this.eventData.narratives.reverse().find(({ shown }) => shown);
+        if (narrative) await this.sprintChannel.send('> **Welcome back! The story where you last left off:**');
+        //show first if there is no last shown narrative
+        await this.showNarrative(narrative ? narrative : this.eventData.narratives[0]);
         await this.showEnemies();
     }
 
@@ -691,7 +695,7 @@ class Event
             this.showEnemy(currentEnemy, true);
             if (currentEnemy.defeated) {
                 this.distributeGold(currentEnemy);
-                //this.showEnemies();
+                this.showProgress();
             }
             return;
         }
@@ -717,7 +721,7 @@ class Event
         const share = Math.floor(enemy.gold / sprinters.length);
         sprinters.forEach(data => data.sprinter.addGold(share));
 
-        await this.sprintChannel.send(`The enemy dropped 💰 ${enemy.gold}. Shared among ${sprinters.length} warriors who took it down! 💰 ${share} a share`);
+        await this.sprintChannel.send(`> The enemy dropped 💰 ${enemy.gold}. Shared among ${sprinters.length} warriors who took it down! 💰 ${share} a share`);
     }
 
     /**
@@ -1061,27 +1065,36 @@ class Event
     }
 
     /**
+     * Show progress during event. Enemies left and such
+     */
+    async showProgress()
+    {
+        const totalEnemies = this.eventData.enemies.length;
+        const defeated = this.eventData.enemies.filter(({ health }) => !health).length;
+
+        await this.sprintChannel.send(`> **Enemies defeated**: ${defeated} out of ${totalEnemies}`);
+    }
+
+    /**
      * Show list of enemies still needed to beat
      * */
     async showEnemies()
     {
-        await this.sprintChannel.send('Enemies:');
-        this.eventData.enemies.forEach(async ({ name, health, wordcount, healthbar, thumbnail }, key, enemies) =>
-        {
-            if ((key > 0 && !enemies[key - 1].defeated) || health === wordcount) {
-                thumbnail = null;
-                name = name.replace(/./gi, '?');
-                health = `${health}`.replace(/[0-9]/gi, '?');
-                wordcount = `${wordcount}`.replace(/[0-9]/gi, '?');
-            }
+        await this.showProgress();
 
+        //get enemy that still has health but has taken damage
+        const currentEnemy = this.eventData.enemies.find(({ health, wordcount }) => health && health < wordcount);
+        if (currentEnemy) {
+            const { name, health, wordcount, healthbar, thumbnail } = currentEnemy;
             const embed = new this.Discord.MessageEmbed()
                 .setAuthor(name, thumbnail)
                 .addField('Health', healthbar, true)
                 .addField('Wordcount', `${health}/${wordcount}`, true);
 
+            await this.sprintChannel.send('> **Current enemy:**');
             await this.sprintChannel.send(embed);
-        });
+        }
+        
     }
 
 
